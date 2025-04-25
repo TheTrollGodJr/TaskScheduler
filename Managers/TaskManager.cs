@@ -151,4 +151,16 @@ public static class TaskManager {
         GlobalData.TaskList.RemoveAt(index); // Remove selected task
         jsonHandler.jsonHandler.SaveJsonData(); // Save changes
     }
+
+    /// <summary>
+    /// Gets a List of all task names
+    /// </summary>
+    /// <returns>Returns a string list with all task names</returns>
+    public static List<string> GetTaskNames() {
+
+        List<string> names = []; // Create empty name list
+        foreach (var item in GlobalData.TaskList) names.Add(item.TaskName); // Populate list with task names
+        
+        return names; // return task name list
+    }
 }

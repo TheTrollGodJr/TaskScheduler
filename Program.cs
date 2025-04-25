@@ -23,25 +23,29 @@ public struct Task {
 class Program {
     
     static void Main(string[] args) {
-        List<Task> tasks = jsonHandler.GetJsonData();
+        //List<Task> tasks = jsonHandler.GetJsonData();
         var options = new List<string> { "Create Task", "View Tasks", "Edit Task", "Remove Task", "Exit" };
-        int choice = ShowMenu(options, "Welcome to Task Scheduler");
+        
+        while (true) {
+            int choice = ShowMenu(options, "Welcome to Task Scheduler");
 
-        Console.Clear();
-        switch (choice) {
-            case 0: // Add Task
-                tasks.Add(TaskManager.NewTask());
-                jsonHandler.SaveJsonData(tasks);
-                break;
-            case 1: // View Tasks 
-                break; 
-            case 2: // Edit Tasks
-                break;
-            case 3: // Remove Task
-                break;
-            case 4: // Exit
-                break;
-            default: break;
+            //Console.Clear();
+            switch (choice) {
+                case 0: // Add Task
+                    TaskManager.NewTask();
+                    jsonHandler.SaveJsonData();
+                    break;
+                case 1: // View Tasks 
+                    break; 
+                case 2: // Edit Tasks
+                    break;
+                case 3: // Remove Task
+                    RemoveMenu();
+                    break;
+                case 4: // Exit
+                    Environment.Exit(0); break;
+                default: break;
+            }
         }
     }
 
@@ -54,10 +58,7 @@ class Program {
             Console.WriteLine(prompt + "\n");
 
             for (int i = 0; i < options.Count; i++) {
-                if (i == selected) {
-                    //Console.BackgroundColor = ConsoleColor.White;
-                    Console.ForegroundColor = ConsoleColor.Green;
-                }
+                if (i == selected) Console.ForegroundColor = ConsoleColor.Green;
 
                 Console.WriteLine($"  {options[i]}");
 
@@ -74,8 +75,82 @@ class Program {
         return selected;
     }
 
-    static void Menu() {
-        
+    /// <summary>
+    /// Displays a menu to select a task to remove
+    /// </summary>
+    static void RemoveMenu() {
+        // Initialize variables
+        List<string> taskNames = TaskManager.GetTaskNames(); // Get task names
+        ConsoleKey key; // Console key object
+        int selected = 0; // Selected task index
+
+        // If there are no saved tasks
+        if (taskNames.Count == 0) {
+
+            // Display message then wait for any key to return to the main menu
+            Console.Clear();
+            Console.WriteLine("Select a Task to remove\n(Press any key to go back)\n\n  No Tasks");
+            Console.ReadKey();
+            return;
+        }
+
+        // Show selection menu to select a task to remove
+        do {
+
+            Console.Clear();
+            Console.WriteLine("Select a Task to remove\n(Press ESC to go back)\n");
+
+            // Show all task names
+            for (int i = 0; i < taskNames.Count; i++) {
+
+                if (i == selected) Console.ForegroundColor = ConsoleColor.Green; // Highlight selected task in green
+
+                Console.WriteLine($"  {taskNames[i]}");
+                Console.ResetColor();
+            }
+
+            key = Console.ReadKey(true).Key; // Get current key
+
+            // Movement options using keyboard
+            if (key == ConsoleKey.UpArrow) selected = (selected - 1 + taskNames.Count) % taskNames.Count; // Select up
+            else if (key == ConsoleKey.DownArrow) selected = (selected + 1) % taskNames.Count; // Select down
+            else if (key == ConsoleKey.Enter) { // Confirm deletion selection
+
+                if (RemoveConfirmation(taskNames[selected])) { // Run function to confirm deletion
+
+                    // Remove task
+                    TaskManager.RemoveItem(taskNames[selected]);
+                    taskNames.RemoveAt(selected);
+                    }
+
+                selected = 0; // Reset selection index
+            }
+
+        } while (key != ConsoleKey.Escape); // Look while ESC is not pressed
     }
     
+    /// <summary>
+    /// A confirmation screen to confirm the deletion of a task
+    /// </summary>
+    /// <param name="name">The name of the task to be deleted</param>
+    /// <returns>True if it should be deleted, false if it shouldn't</returns>
+    static bool RemoveConfirmation(string name) {
+
+        // Reset and write to the console
+        Console.Clear();
+        Console.WriteLine($"Are you sure you want to delete task: {name}? (YES/NO)");
+
+        string inp = Console.ReadLine().ToUpper(); // Get user input
+
+        // Make sure the input is valid; either YES or NO
+        while (inp != "YES" && inp != "NO") {
+
+            Console.WriteLine("Invalid Input. Try Again (YES/NO)");
+            inp = Console.ReadLine().ToUpper();
+        }
+
+        // Return true if YES, return false if NO
+        if (inp == "YES") return true;
+        return false;
+    }
 }
