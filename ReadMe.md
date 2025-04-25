@@ -8,7 +8,7 @@
 - [X] json file lock when reading/writing
 - [ ] add View, Edit, and Remove functionality
 - [X] Create Home Menu loop that exits with Exit
-- [ ] add to system tray
+- [ ] Add option to stop/restart the backend
 
 ## Backend ToDo
 - [ ] Main loop to check if a task needs to be added to the queue -- loop once a minute
@@ -18,3 +18,4 @@
 - [ ] Log file
 - [ ] add requirement for admin access to run -- might interfer with autostart
 - [ ] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
+- [ ] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
