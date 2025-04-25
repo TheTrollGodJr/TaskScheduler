@@ -5,7 +5,7 @@
     - [ ] Create a log file in AppData Roaming that the backend adds to when a task in run.
 
 ## Frontend ToDo
-- [ ] json file lock when reading/writing
+- [X] json file lock when reading/writing
 - [ ] add View, Edit, and Remove functionality
 - [X] Create Home Menu loop that exits with Exit
 - [ ] add to system tray

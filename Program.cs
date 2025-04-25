@@ -50,56 +50,88 @@ class Program {
         }
     }
 
+    /// <summary>
+    /// Displays all attributes for each saved task
+    /// </summary>
     static void ViewTasks() {
+
+        // Clear and print title
         Console.Clear();
         Console.WriteLine("All Tasks\n(Press any key to go back)\n");
 
+        // Check if the TaskList is empty
         if (GlobalData.TaskList.Count == 0) {
+
             Console.WriteLine("  No Tasks");
             Console.ReadKey();
             return;
         }
 
-        Console.BackgroundColor = ConsoleColor.Gray;
+        // Display header row
+        Console.BackgroundColor = ConsoleColor.Black;
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine(" Task Name |    date     | Repeat? | Intval | Command ");
         Console.ResetColor();
+
+        // Display each tasks attributes
         foreach (var item in GlobalData.TaskList) {
+
             Console.WriteLine($"  {FixedLength(item.TaskName, 8)} | {FixedLength(item.Date, 11)} | {FixedLength(item.Repeats.ToString(), 7)} | {FixedLength(item.RepeatInterval ?? "Null", 6)} | {item.Command}");
         }
-        Console.ReadKey();
+
+        Console.ReadKey(); // Wait for any key press
     }
 
+    /// <summary>
+    /// Takes in any string and sets it to the specified length by trimming it or padding as needed.
+    /// </summary>
+    /// <param name="str">The string to be modified</param>
+    /// <param name="len">The length to set the string to</param>
+    /// <returns>A string at the specified length</returns>
     static string FixedLength(string str, int len) {
-        if (str.Length > len) return str.Substring(0, len);
-        else if (str.Length < len) return str.PadRight(len);
-        return str;
+
+        if (str.Length > len) return str.Substring(0, len); // Trim string if its too long
+        else if (str.Length < len) return str.PadRight(len); // Pad string if its too short
+        return str; // Return without changing
     }
 
+    /// <summary>
+    /// The main 'home' menu to select different views
+    /// </summary>
+    /// <param name="options">List of views to choose from</param>
+    /// <param name="prompt">Intro prompt, eg. 'Welcome to ...'</param>
+    /// <returns>Int index of which option you choose; options[selected]</returns>
     static int ShowMenu(List<string> options, string prompt = "Choose an option:") {
+
+        // Initilizing Variables
         int selected = 0;
         ConsoleKey key;
 
+        // Update loop
         do {
+
+            // Clear and print title
             Console.Clear();
             Console.WriteLine(prompt + "\n");
 
+            // Display all options
             for (int i = 0; i < options.Count; i++) {
-                if (i == selected) Console.ForegroundColor = ConsoleColor.Green;
+
+                if (i == selected) Console.ForegroundColor = ConsoleColor.Green; // Highlight selected option in green
 
                 Console.WriteLine($"  {options[i]}");
-
                 Console.ResetColor();
             }
 
-            key = Console.ReadKey(true).Key;
+            key = Console.ReadKey(true).Key; // Read keyboard presses
 
+            // Interpret keyboard presses
             if (key == ConsoleKey.UpArrow) selected = (selected - 1 + options.Count) % options.Count;
             else if (key == ConsoleKey.DownArrow) selected = (selected + 1) % options.Count;
 
-        } while (key != ConsoleKey.Enter);
+        } while (key != ConsoleKey.Enter); // Loop while enter hasn't been pressed; nothing has been selected
 
-        return selected;
+        return selected; // Return options index
     }
 
     /// <summary>
