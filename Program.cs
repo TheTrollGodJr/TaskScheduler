@@ -35,7 +35,8 @@ class Program {
                     TaskManager.NewTask();
                     jsonHandler.SaveJsonData();
                     break;
-                case 1: // View Tasks 
+                case 1: // View Tasks
+                    ViewTasks();
                     break; 
                 case 2: // Edit Tasks
                     break;
@@ -49,7 +50,33 @@ class Program {
         }
     }
 
-    public static int ShowMenu(List<string> options, string prompt = "Choose an option:") {
+    static void ViewTasks() {
+        Console.Clear();
+        Console.WriteLine("All Tasks\n(Press any key to go back)\n");
+
+        if (GlobalData.TaskList.Count == 0) {
+            Console.WriteLine("  No Tasks");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.BackgroundColor = ConsoleColor.Gray;
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine(" Task Name |    date     | Repeat? | Intval | Command ");
+        Console.ResetColor();
+        foreach (var item in GlobalData.TaskList) {
+            Console.WriteLine($"  {FixedLength(item.TaskName, 8)} | {FixedLength(item.Date, 11)} | {FixedLength(item.Repeats.ToString(), 7)} | {FixedLength(item.RepeatInterval ?? "Null", 6)} | {item.Command}");
+        }
+        Console.ReadKey();
+    }
+
+    static string FixedLength(string str, int len) {
+        if (str.Length > len) return str.Substring(0, len);
+        else if (str.Length < len) return str.PadRight(len);
+        return str;
+    }
+
+    static int ShowMenu(List<string> options, string prompt = "Choose an option:") {
         int selected = 0;
         ConsoleKey key;
 
