@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Managers.jsonHandler;
 using Managers.TaskManager;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 
 public struct Task {
     public string TaskName;
@@ -25,7 +26,7 @@ class Program {
     static void Main(string[] args) {
         jsonHandler.UnlockJson(GlobalData.lockPath);
 
-        var options = new List<string> { "Create Task", "View Tasks", "Edit Task", "Remove Task", "Stop Manager", "Restart Manager", "Exit" };
+        var options = new List<string> { "Create Task", "View Tasks", "Edit Task", "Remove Task", "Stop Manager -- Not Implemented", "Restart Manager -- Not Implemented", "Exit" };
         
         while (true) {
             int choice = ShowMenu(options, "Welcome to Task Scheduler");
@@ -40,6 +41,7 @@ class Program {
                     ViewTasks();
                     break; 
                 case 2: // Edit Tasks
+                    EditMenu();
                     break;
                 case 3: // Remove Task
                     RemoveMenu();
@@ -53,6 +55,72 @@ class Program {
                 default: break;
             }
         }
+    }
+
+    static void EditMenu() {
+        int[] selection = [0,0]; // Row, Column
+        ConsoleKey key;
+
+        // Check if the TaskList is empty
+        if (GlobalData.TaskList.Count == 0) {
+
+            // Clear and print title
+            Console.Clear();
+            Console.WriteLine("All Tasks\n(Press any key to go back)\n");
+
+            Console.WriteLine("  No Tasks");
+            Console.ReadKey();
+            return;
+        }
+
+        while (true) {
+
+            // Clear and print title
+            Console.Clear();
+            Console.WriteLine("All Tasks\n(Press any key to go back)\n");
+
+            // Display header row
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(" Task Name |    date     | Repeat? | Intval | Command ");
+            Console.ResetColor();
+
+            int printLine = 0;
+            foreach (var item in GlobalData.TaskList) {
+                //List<string> itemList = [item.TaskName, item.Date, item.Repeats.ToString(), item.RepeatInterval, item.Command];
+                List<string> itemList = TaskToList(item, true);
+            
+                int column = 0;
+                Console.Write(" ");
+                foreach (string str in itemList) {
+                    if (printLine == selection[0] && column == selection[1]) {
+                        Console.BackgroundColor = ConsoleColor.White;
+                        Console.ForegroundColor = ConsoleColor.Black;
+                    }
+                    Console.Write($" {str} ");
+                    Console.ResetColor();
+                    if (column != 4) Console.Write("|");
+                    column++;
+                }
+                Console.Write("\n");
+            
+                printLine++;
+            }
+
+            key = Console.ReadKey(true).Key;
+
+            if (key == ConsoleKey.RightArrow && selection[1] != 4) selection[1]++;
+            else if (key == ConsoleKey.LeftArrow && selection[1] != 0) selection[1]--;
+            else if (key == ConsoleKey.UpArrow && selection[0] != 0) selection[0]--;
+            else if (key == ConsoleKey.DownArrow && selection[0] != GlobalData.TaskList.Count-1) selection[0]++;
+            else if (key == ConsoleKey.Escape) break;
+            else if (key == ConsoleKey.Enter) {}
+        }
+    }
+
+    static List<string> TaskToList(Task item, bool fixedLength = false) {
+        if (!fixedLength) return [item.TaskName, item.Date, item.Repeats.ToString(), item.RepeatInterval ?? "Null", item.Command];
+        return [FixedLength(item.TaskName, 8), FixedLength(item.Date, 11), FixedLength(item.Repeats.ToString(), 7), FixedLength(item.RepeatInterval ?? "Null", 6), item.Command];
     }
 
     /// <summary>

@@ -19,3 +19,9 @@
 - [ ] add requirement for admin access to run -- might interfer with autostart
 - [ ] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
 - [ ] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
+
+## Frontend Edit View ToDo
+- implement actual edit functionality
+    - do this by creating a new menu screen asking for the new value
+    - check if the value is valid by abstracting the checks in CreateTask to single functions
+        - this will mean modifying CreateTask as well
