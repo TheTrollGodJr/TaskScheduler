@@ -20,49 +20,23 @@ public static class TaskManager {
         Console.WriteLine("Task Name: ");
         item.TaskName = Console.ReadLine(); // Save the task name
 
-        // Check that the saved name if valid
-        while (true) {
-
-            // Is the name empty?
-            if (string.IsNullOrWhiteSpace(item.TaskName)) {
-                Console.WriteLine("Name cannot be empty. Try Again: ");
-                item.TaskName = Console.ReadLine();
-                continue; // Reset the loop and check again
-            }
-
-            // Is the name already taken?
-            if (!VerifyTaskName(item.TaskName)) { 
-                Console.WriteLine("That name is already in use. Try Again: ");
-                item.TaskName = Console.ReadLine();
-                continue; // Reset the loop and check again
-            }
-
-            break; // Break the loop; the name is valid
+        while (!ValidateTaskName(item.TaskName)) {
+            item.TaskName = Console.ReadLine();
         }
 
         // Get execution date
         Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
         item.Date = Console.ReadLine(); 
-        int DateCheckStatus = CheckDate(item.Date, "MM/dd HH:mm"); // 0 - valid, 1 - empty string, 2 - invalid format
-
-        // While the date isn't valid
-        while (DateCheckStatus != 0) {
-
-            if (DateCheckStatus == 1) Console.WriteLine("Cannot be empty. Try Again: ");
-            if (DateCheckStatus == 2) Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
-            
+        
+        while (!ValidateDate(item.Date, "MM/dd HH:mm")) {
             item.Date = Console.ReadLine();
-            DateCheckStatus = CheckDate(item.Date, "MM/dd HH:mm"); // Re-Check the date
-        }   
+        }
 
         // Does the task repeat?
         Console.WriteLine("Repeat Task? (Y/N): ");
         string inp = Console.ReadLine();
 
-        // Check that the input is valid; Y/N and not empty
-        while (string.IsNullOrWhiteSpace(inp) || (inp.ToUpper() != "Y" && inp.ToUpper() != "N")) {
-
-            Console.WriteLine("Invalid Input. Try Again: ");
+        while (!ValidateRepeatTask(inp)) {
             inp = Console.ReadLine();
         }
 
@@ -74,15 +48,12 @@ public static class TaskManager {
         if (item.Repeats) {
 
             Console.WriteLine("Repeat Interval (min, hr, day, week, mon, year): ");
-            inp = Console.ReadLine();
+            //inp = Console.ReadLine();
+            item.RepeatInterval = Console.ReadLine();
 
-            // Make sure the input is valid
-            while (string.IsNullOrWhiteSpace(inp) || (inp.ToLower() != "min" && inp.ToLower() != "hr" && inp.ToLower() != "day" && inp.ToLower() != "week" && inp.ToLower() != "mon" && inp.ToLower() != "year")) {
-                Console.WriteLine("Invalid Input. Try Again: ");
-                inp = Console.ReadLine();
+            while (!ValidateRepeatInterval(item.RepeatInterval)) {
+                item.RepeatInterval = Console.ReadLine();
             }
-
-            item.RepeatInterval = inp; // Set the repeat interval
         }
         else item.RepeatInterval = null; // Set the repeat interval to Null if the task doesn't repeat
 
@@ -101,6 +72,24 @@ public static class TaskManager {
         jsonHandler.jsonHandler.SaveJsonData(); // Save Changes
     }
 
+    public static bool ValidateTaskName(string name) {
+        // Is the name empty?
+        if (string.IsNullOrWhiteSpace(name)) {
+            Console.WriteLine("Name cannot be empty. Try Again");
+            return false; // Reset the loop and check again
+        }
+
+        // Make sure name isn't already in use
+        foreach (Task item in GlobalData.TaskList) {
+            if (item.TaskName == name) { // Compare all task names, return false if there is a match
+                Console.WriteLine("Name already in use. Try Again");
+                return false; 
+            }
+        }
+
+        return true; // Name is valid
+    }
+
     /// <summary>
     /// Checks if the inputed date was inputed correctly/is valid to the specified format
     /// </summary>
@@ -110,11 +99,56 @@ public static class TaskManager {
     /// returns the status of the date
     /// 0 - Valid, 1 - String is empty, 2 - Invalid time format
     /// </returns>
+    /*
     static int CheckDate(string date, string format) {
 
         if (string.IsNullOrWhiteSpace(date)) return 1; // null or blank
         if (!DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate)) return 2; // invlaid format
         return 0; // correct format
+    }
+    */
+
+    public static bool ValidateDate(string date, string format) {
+
+        if (string.IsNullOrWhiteSpace(date)) { // null or blank
+
+            Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
+            return false;
+        } 
+
+        if (!DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate)) { // invlaid format
+        
+            Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
+            return false;
+        }
+
+        return true; // correct format
+
+        //if (DateCheckStatus == 1) Console.WriteLine("Cannot be empty. Try Again: ");
+        //if (DateCheckStatus == 2) Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
+            
+    }
+
+    public static bool ValidateRepeatTask(string inp) {
+
+        if (string.IsNullOrWhiteSpace(inp) || (inp.ToUpper() != "Y" && inp.ToUpper() != "N")) {
+
+            Console.WriteLine("Invalid Input. Try Again: ");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool ValidateRepeatInterval(string inp) {
+
+        if (string.IsNullOrWhiteSpace(inp) || (inp.ToLower() != "min" && inp.ToLower() != "hr" && inp.ToLower() != "day" && inp.ToLower() != "week" && inp.ToLower() != "mon" && inp.ToLower() != "year")) {
+
+            Console.WriteLine("Invalid Input. Try Again: ");
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -122,6 +156,7 @@ public static class TaskManager {
     /// </summary>
     /// <param name="name">The task name to check</param>
     /// <returns>True if the name is avaliable, False if it isn't</returns>
+    /*
     static bool VerifyTaskName(string name) {
         
         // Loop through all tasks
@@ -131,6 +166,7 @@ public static class TaskManager {
 
         return true; // Name is valid
     }
+    */
 
     /// <summary>
     /// Removes a task from the global TaskList and save the change

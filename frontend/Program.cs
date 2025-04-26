@@ -13,7 +13,7 @@ using Managers.TaskManager;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
-public struct Task {
+public class Task {
     public string TaskName;
     public string Command;
     public string Date;
@@ -77,7 +77,7 @@ class Program {
 
             // Clear and print title
             Console.Clear();
-            Console.WriteLine("All Tasks\n(Press any key to go back)\n");
+            Console.WriteLine("All Tasks\n(Press ESC to go back)\n");
 
             // Display header row
             Console.BackgroundColor = ConsoleColor.Black;
@@ -114,8 +114,99 @@ class Program {
             else if (key == ConsoleKey.UpArrow && selection[0] != 0) selection[0]--;
             else if (key == ConsoleKey.DownArrow && selection[0] != GlobalData.TaskList.Count-1) selection[0]++;
             else if (key == ConsoleKey.Escape) break;
-            else if (key == ConsoleKey.Enter) {}
+            else if (key == ConsoleKey.Enter) editAttribute(selection[0], selection[1]);
         }
+    }
+
+    static void editAttribute(int taskListIndex, int itemIndex) {
+        List<string> attrList = ["Task Name", "Date", "Task Repeat?", "Repeat Interval", "Command"];
+        Console.Clear();
+        Console.Write($"Input new data for ");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write($"{attrList[itemIndex]}");
+        Console.ResetColor();
+        Console.Write(" in task ");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write($"{GlobalData.TaskList[taskListIndex].TaskName}:\n");
+        Console.ResetColor();
+
+        Console.WriteLine("Type '!EXIT?' to go back");
+
+        string inp;// = Console.ReadLine();
+        bool invalidInput = true;
+
+
+        while (invalidInput) {
+            switch (itemIndex) {
+                case 0: 
+                    Console.WriteLine("Task Name: ");
+                    inp = Console.ReadLine();
+                    if (inp == "!EXIT?") return;
+
+                    if (TaskManager.ValidateTaskName(inp)) {
+                        GlobalData.TaskList[taskListIndex].TaskName = inp;
+                        invalidInput = false;
+                    }
+                    break;
+                case 1:
+                    Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
+                    inp = Console.ReadLine();
+                    if (inp == "!EXIT?") return;
+                    if (TaskManager.ValidateDate(inp, "MM/dd HH:mm")) {
+                        GlobalData.TaskList[taskListIndex].Date = inp;
+                        invalidInput = false;
+                    }
+                    break;
+                case 2:
+                    Console.WriteLine("Repeat Task? (Y/N): ");
+                    inp = Console.ReadLine();
+                    if (inp == "!EXIT?") return;
+                    if (TaskManager.ValidateRepeatTask(inp)) {
+                        if (inp == "Y") {
+                            GlobalData.TaskList[taskListIndex].Repeats = true;
+                            itemIndex++;
+                        }
+                        else {
+                            GlobalData.TaskList[taskListIndex].Repeats = false;
+                            GlobalData.TaskList[taskListIndex].RepeatInterval = null;
+                            invalidInput = false;
+                        }
+                    }
+                    break;
+                case 3:
+                    if (!GlobalData.TaskList[taskListIndex].Repeats) {
+                        Console.Write("\nCannot change Repeat Interval if Repeating is off.\n(Press any key to go back)");
+                        Console.ReadKey(true);
+                        return;
+                    }
+                    Console.WriteLine("Repeat Interval (min, hr, day, week, mon, year): ");
+                    inp = Console.ReadLine();
+                    if (inp == "!EXIT?") {
+                        if (GlobalData.TaskList[taskListIndex].Repeats && GlobalData.TaskList[taskListIndex].RepeatInterval == null) {
+                            Console.WriteLine("Cannot exit without specifiying a Repeat Interval");
+                            break;
+                        }
+                        else return;
+                    }
+                    if (TaskManager.ValidateRepeatInterval(inp)) {
+                        GlobalData.TaskList[taskListIndex].RepeatInterval = inp;
+                        invalidInput = false;
+                    }
+                    break;
+                case 4:
+                    Console.WriteLine("Terminal Command: ");
+                    inp = Console.ReadLine();
+                    if (inp == "!EXIT?") return;
+                    if (!string.IsNullOrEmpty(inp)) {
+                        GlobalData.TaskList[taskListIndex].Command = inp;
+                        invalidInput = false;
+                    }
+                    else Console.Write("Cannot be empty. Try Again\n");
+                    break;
+            }
+        }
+
+        jsonHandler.SaveJsonData();
     }
 
     static List<string> TaskToList(Task item, bool fixedLength = false) {

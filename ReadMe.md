@@ -1,12 +1,14 @@
 # main ToDo
 - [X] create home menu screen -- abstract to a GUI eventually
-- [ ] Finish front end functionality for creating/editing/removing/viewing tasks
-- [ ] Create separate backend exe that autostarts as a Windows Service.
-    - [ ] Create a log file in AppData Roaming that the backend adds to when a task in run.
+- [X] Finish front end functionality for creating/editing/removing/viewing tasks
+- [X] Create separate frontend/backend exe 
+- [ ] Create backend functionality
+- [ ] autostart backend as a Windows Service.
+- [ ] Create a log file in AppData Roaming that the backend adds to when a task in run.
 
 ## Frontend ToDo
 - [X] json file lock when reading/writing
-- [ ] add View, Edit, and Remove functionality
+- [X] add View, Edit, and Remove functionality
 - [X] Create Home Menu loop that exits with Exit
 - [ ] Add option to stop/restart the backend
 
@@ -19,9 +21,4 @@
 - [ ] add requirement for admin access to run -- might interfer with autostart
 - [ ] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
 - [ ] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
-
-## Frontend Edit View ToDo
-- implement actual edit functionality
-    - do this by creating a new menu screen asking for the new value
-    - check if the value is valid by abstracting the checks in CreateTask to single functions
-        - this will mean modifying CreateTask as well
+- [ ] Add a catch system if the task command fails, add a way to notify the user and add to the log
