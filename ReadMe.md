@@ -3,6 +3,7 @@
 - [X] Finish front end functionality for creating/editing/removing/viewing tasks
 - [X] Create separate frontend/backend exe 
 - [ ] Create backend functionality
+- [ ] Look into combining the frontend and backend into a single exe that can swap between non-headless and headless
 - [ ] autostart backend as a Windows Service.
 - [ ] Create a log file in AppData Roaming that the backend adds to when a task in run.
 
@@ -11,6 +12,7 @@
 - [X] add View, Edit, and Remove functionality
 - [X] Create Home Menu loop that exits with Exit
 - [ ] Add option to stop/restart the backend
+- [ ] Add reload option to get a updated task list
 - [ ] Export tasks list as csv
 
 ## Backend ToDo

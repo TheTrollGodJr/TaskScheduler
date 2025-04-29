@@ -11,7 +11,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <None Include="Properties/app.manifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-  </None>
+    </None>
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
 </Project>
