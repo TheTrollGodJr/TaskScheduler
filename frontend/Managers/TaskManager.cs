@@ -1,4 +1,5 @@
 using System.Globalization;
+using Shared;
 
 namespace Managers.TaskManager;
 
@@ -13,7 +14,7 @@ public static class TaskManager {
     /// Creates a new Task using user input and saves it
     /// </summary>
     public static void NewTask() {
-        Task item = new Task(); // Create new task variable
+        ScheduledTask item = new ScheduledTask(); // Create new task variable
 
         // Get new task name
         Console.Clear();
@@ -69,7 +70,7 @@ public static class TaskManager {
         }
 
         GlobalData.TaskList.Add(item); // Add the new task to the global TaskList
-        jsonHandler.jsonHandler.SaveJsonData(); // Save Changes
+        jsonHandler.SaveJsonData(); // Save Changes
     }
 
     public static bool ValidateTaskName(string name) {
@@ -78,9 +79,9 @@ public static class TaskManager {
             Console.WriteLine("Name cannot be empty. Try Again");
             return false; // Reset the loop and check again
         }
-
+        
         // Make sure name isn't already in use
-        foreach (Task item in GlobalData.TaskList) {
+        foreach (Shared.ScheduledTask item in GlobalData.TaskList) {
             if (item.TaskName == name) { // Compare all task names, return false if there is a match
                 Console.WriteLine("Name already in use. Try Again");
                 return false; 
@@ -185,7 +186,7 @@ public static class TaskManager {
         if (index >= GlobalData.TaskList.Count) return;
 
         GlobalData.TaskList.RemoveAt(index); // Remove selected task
-        jsonHandler.jsonHandler.SaveJsonData(); // Save changes
+        jsonHandler.SaveJsonData(); // Save changes
     }
 
     /// <summary>

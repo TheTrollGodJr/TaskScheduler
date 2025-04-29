@@ -8,18 +8,13 @@ using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using System.Text.Json;
 using System.Collections.Generic;
-using Managers.jsonHandler;
 using Managers.TaskManager;
+//using Managers.jsonHandler;
+using Shared;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
-public class Task {
-    public string TaskName;
-    public string Command;
-    public string Date;
-    public string? RepeatInterval; //second, minute, hour, day, week, month, year, null (if does not repeat)
-    public bool Repeats;
-}
+
 
 class Program {
     
@@ -139,7 +134,7 @@ class Program {
         while (invalidInput) {
             switch (itemIndex) {
                 case 0: 
-                    Console.WriteLine("Task Name: ");
+                    Console.WriteLine("\nTask Name: ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
 
@@ -158,7 +153,7 @@ class Program {
                     }
                     break;
                 case 2:
-                    Console.WriteLine("Repeat Task? (Y/N): ");
+                    Console.WriteLine("\nRepeat Task? (Y/N): ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
                     if (TaskManager.ValidateRepeatTask(inp)) {
@@ -179,7 +174,7 @@ class Program {
                         Console.ReadKey(true);
                         return;
                     }
-                    Console.WriteLine("Repeat Interval (min, hr, day, week, mon, year): ");
+                    Console.WriteLine("\nRepeat Interval (min, hr, day, week, mon, year): ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") {
                         if (GlobalData.TaskList[taskListIndex].Repeats && GlobalData.TaskList[taskListIndex].RepeatInterval == null) {
@@ -194,7 +189,7 @@ class Program {
                     }
                     break;
                 case 4:
-                    Console.WriteLine("Terminal Command: ");
+                    Console.WriteLine("\nTerminal Command: ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
                     if (!string.IsNullOrEmpty(inp)) {
@@ -209,7 +204,7 @@ class Program {
         jsonHandler.SaveJsonData();
     }
 
-    static List<string> TaskToList(Task item, bool fixedLength = false) {
+    static List<string> TaskToList(ScheduledTask item, bool fixedLength = false) {
         if (!fixedLength) return [item.TaskName, item.Date, item.Repeats.ToString(), item.RepeatInterval ?? "Null", item.Command];
         return [FixedLength(item.TaskName, 8), FixedLength(item.Date, 11), FixedLength(item.Repeats.ToString(), 7), FixedLength(item.RepeatInterval ?? "Null", 6), item.Command];
     }
