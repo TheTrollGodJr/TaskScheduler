@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType> <!-- Specifies that this is a Windows executable -->
+    <TargetFramework>net9.0-windows</TargetFramework> <!-- Set the framework to Windows-specific -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <UseWindowsForms>true</UseWindowsForms> <!-- Enable Windows Forms -->
+    <!-- If you're using WPF instead, use <UseWPF>true</UseWPF> and set <UseWindowsForms>false</UseWindowsForms> -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NewtonSoft.json" Version="13.0.3" />
+    <None Include="Properties/app.manifest">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
