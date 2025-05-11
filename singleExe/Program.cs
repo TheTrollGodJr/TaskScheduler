@@ -6,10 +6,11 @@
     using System.Reflection;
     using System.Collections.Concurrent;
     using System.Timers;
+    using System.ServiceProcess;
 
     using Managers;
 
-    class Program
+    class TaskService : ServiceBase
     {
         static ConcurrentQueue<string[]> commandQueue = new ConcurrentQueue<string[]>();
 
@@ -23,12 +24,17 @@
         const int SW_HIDE = 0;  // Hides the console
         const int SW_SHOW = 5;  // Shows the console
         private static System.Timers.Timer timer;
-        
+        private static bool endService = false;
+        private string _Args;
 
-        [STAThread] // Required for WinForms applications
-        static void Main(string[] args)
-        {
+        public TaskService(string[] args) {
+            if (args.Length > 0) _Args = args;
+            else _Args = "";
+        }
 
+        public TaskService(){}
+
+        static void Main(string[] args) {
             if (!CheckAdmin()) {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Error: Incorrect Permissions\n  Relaunch application with admin priviledges");
@@ -36,8 +42,23 @@
                 Environment.Exit(1);
             }
 
+            TaskService serv = new TaskService(args);
+
+            ServiceBase[] ServicesToRun;
+            ServicesToRun = new ServiceBase[] { serv };
+            ServiceBase.Run(ServicesToRun);
+        }
+
+        [STAThread] // Required for WinForms applications
+        protected override void OnStart(string[] args)
+        {
+
+            ///
+            ///     ADD CHECKS BELOW IN MAIN; ONLY RUN OnStart FOR BACKGROUND 
+            /// 
+
             // If we're running with the GUI flag, hide the console
-            if (args.Contains("-g") || args.Contains("--gui"))
+            if (_Args.Contains("-g") || _Args.Contains("--gui"))
             {
                 //var handle = GetConsoleWindow();
                 //ShowWindow(handle, SW_HIDE);  // Hide the console
@@ -46,11 +67,11 @@
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainForm()); // Launch your form
             }
-            else if (args.Contains("-c") || args.Contains("--console"))
+            else if (_Args.Contains("-c") || _Args.Contains("--console"))
             {
                 ConsoleManager.LaunchConsoleApp();
             }
-            else if (args.Contains("-s") || args.Contains("--stop")) {
+            else if (_Args.Contains("-s") || _Args.Contains("--stop")) {
                 return; // Add functionality to stop the already running background process
             }
             else
@@ -82,12 +103,18 @@
             }
         }
 
+        protected override void OnStop() {
+            /// ADD FUNCTIONALITY
+        }
+
         static void TaskLoop(object sender, ElapsedEventArgs e) {
             string currTime = DateTime.Now.ToString("MM/dd HH:mm");
+            Console.WriteLine($"Task Looped: {currTime}");
             GlobalData.TaskList = JsonHandler.GetJsonData();
             foreach (var item in GlobalData.TaskList) {
                 if (item.Date == currTime && !IsQueued(item.TaskName)) commandQueue.Enqueue(new string[] {item.TaskName, item.Command});
             }
+            if (endService) this.Stop();
         }
 
         static bool IsQueued(string taskName) {
