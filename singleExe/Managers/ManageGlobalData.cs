@@ -22,4 +22,5 @@ public class ScheduledTask {
         public string Date;
         public string? RepeatInterval; //second, minute, hour, day, week, month, year, null (if does not repeat)
         public bool Repeats;
+        public int? TrueDate = null;
     }

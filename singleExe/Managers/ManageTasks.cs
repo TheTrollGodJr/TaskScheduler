@@ -34,6 +34,12 @@ public static class TaskManager {
             item.Date = Console.ReadLine();
         }
 
+        // Add a value for TrueDate to save the original day of a task if the day is scheduled at the end of a month
+        int day = int.Parse(item.Date.Substring(3, 4));
+        int month = int.Parse(item.Date.Substring(0, 1));
+        if (day > 28) item.TrueDate = day;
+        else if (day == 29 && month == 2) item.Date = $"02/28 {item.Date.Substring(6)}"; // No leap year
+
         // Does the task repeat?
         Console.WriteLine("Repeat Task? (Y/N): ");
         string inp = Console.ReadLine();

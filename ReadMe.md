@@ -16,12 +16,14 @@
 - [ ] Export tasks list as csv
 
 ## Backend ToDo
-- [ ] Main loop to check if a task needs to be added to the queue -- loop once a minute
+- [X] Main loop to check if a task needs to be added to the queue -- loop once a minute
 - [X] json file lock when reading
-- [ ] Create a queue for tasks that need to be run -- create a separate thread to run tasks. Create no more than three threads at once, everything else waits in the queue to be run.
-- [ ] Figure out how to add to Windows Service to autostart
+- [X] Create a queue for tasks that need to be run.
+- [ ] Make backend into a windows service
 - [ ] Log file
 - [X] add requirement for admin access to run -- might interfer with autostart
-- [ ] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
-- [ ] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
+- [X] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
+- [X] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
 - [ ] Add a catch system if the task command fails, add a way to notify the user and add to the log
+- [X] Stop a task from being added to the queue if it is already in the queue
+- [ ] Test everything
