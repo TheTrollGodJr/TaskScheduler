@@ -30,15 +30,22 @@ public static class TaskManager {
         Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
         item.Date = Console.ReadLine(); 
         
-        while (!ValidateDate(item.Date, "MM/dd HH:mm")) {
+        Console.WriteLine("Checking Date");
+        while (!ValidateDate(item.Date, "MM/dd HH:mm")) { /// ------------------ PROGRAM FAILS HERE AFTER SUCCESSFULLY RUNNING ValidateDate()
+            Console.WriteLine("Valid");
             item.Date = Console.ReadLine();
+            Console.WriteLine("Date Set");
         }
 
         // Add a value for TrueDate to save the original day of a task if the day is scheduled at the end of a month
         int day = int.Parse(item.Date.Substring(3, 4));
+        Console.WriteLine("Got day");
         int month = int.Parse(item.Date.Substring(0, 1));
+        Console.WriteLine("Got month");
+        //Console.WriteLine($"Day: {day}\nMon: {month}");
         if (day > 28) item.TrueDate = day;
         else if (day == 29 && month == 2) item.Date = $"02/28 {item.Date.Substring(6)}"; // No leap year
+        Console.WriteLine("Fixed exceptions");
 
         // Does the task repeat?
         Console.WriteLine("Repeat Task? (Y/N): ");
@@ -117,7 +124,7 @@ public static class TaskManager {
     */
 
     public static bool ValidateDate(string date, string format) {
-
+        Console.WriteLine("Running ValidateDate()");
         if (string.IsNullOrWhiteSpace(date)) { // null or blank
 
             Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
@@ -125,11 +132,10 @@ public static class TaskManager {
         } 
 
         if (!DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate)) { // invlaid format
-        
             Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
             return false;
         }
-
+        Console.WriteLine("Valid Date");
         return true; // correct format
 
         //if (DateCheckStatus == 1) Console.WriteLine("Cannot be empty. Try Again: ");

@@ -32,6 +32,5 @@
 - [X] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
 - [ ] Add a catch system if the task command fails, add a way to notify the user and add to the log
 - [X] Stop a task from being added to the queue if it is already in the queue
-- [ ] Change the running program file lock to creating a file to signal termination -- catches all exit possibilities better
-- [ ] Launch frontend gui as an entirely new process using -g
+- [X] Launch frontend gui as an entirely new process using -g
 - [ ] Test everything

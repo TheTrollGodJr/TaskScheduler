@@ -42,8 +42,10 @@ class TaskService
         // If we're running with the GUI flag, hide the console
         if (args.Contains("-g") || args.Contains("--gui"))
         {
-            var handle = GetConsoleWindow();
-            ShowWindow(handle, SW_HIDE);  // Hide the console
+            if (!args.Contains("--show-ui")) {
+                var handle = GetConsoleWindow();
+                ShowWindow(handle, SW_HIDE);  // Hide the console
+            }
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -63,6 +65,10 @@ class TaskService
         ///
         /// HIDE CONSOLE WINDOW
         /// 
+        if (!args.Contains("--show-ui")) {
+            var handle = GetConsoleWindow();
+            ShowWindow(handle, SW_HIDE);
+        }
 
         if (!File.Exists(runLock)) File.Create(runLock).Close();
         else {
@@ -227,7 +233,7 @@ public class Tray {// : Form {
     private Thread guiThread;
     private MainForm guiForm;
     public void AddToSystemTray() {
-        string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        string exeDir = Path.GetDirectoryName(System.AppContext.BaseDirectory);
         string iconPath = Path.Combine(exeDir, "files", "TaskIcon.ico");
 
         trayIcon = new NotifyIcon();
@@ -237,11 +243,12 @@ public class Tray {// : Form {
 
         trayIcon.MouseClick += (sender, e) => {
             if (e.Button == MouseButtons.Left) {
-                OpenGui();
+                StartGuiProcess();
             }
         };
     }
 
+/*
     void OpenGui() {
         if (guiForm != null && !guiForm.IsDisposed) {
             guiForm.Invoke(new Action(() => {
@@ -262,7 +269,21 @@ public class Tray {// : Form {
         guiThread.IsBackground = true;
         guiThread.Start();
     }
+    */
+
+    void StartGuiProcess() {
+        string exeName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
+        string exePath = Path.Combine(AppContext.BaseDirectory, exeName);
+
+        Process.Start(new ProcessStartInfo {
+            FileName = exePath,
+            Arguments = "-g",
+            UseShellExecute = true,
+            Verb = "Runas"
+        });
+    }
 }
+
 
 public class MainForm : Form
 {
