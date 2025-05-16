@@ -1,7 +1,8 @@
 using System.Globalization;
-using Shared;
+using Managers;
+// using Shared;
 
-namespace Managers.TaskManager;
+namespace Managers;
 
 /// <summary>
 /// Manages how the global task list is manipulated
@@ -29,9 +30,17 @@ public static class TaskManager {
         Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
         item.Date = Console.ReadLine(); 
         
-        while (!ValidateDate(item.Date, "MM/dd HH:mm")) {
+        while (!ValidateDate(item.Date, "MM/dd HH:mm")) { 
+            
             item.Date = Console.ReadLine();
         }
+
+        // Add a value for TrueDate to save the original day of a task if the day is scheduled at the end of a month
+        int day = int.Parse(item.Date.Substring(3, 3));
+        int month = int.Parse(item.Date.Substring(0, 1));
+        
+        if (day > 28) item.TrueDate = day;
+        else if (day == 29 && month == 2) item.Date = $"02/28 {item.Date.Substring(6)}"; // No leap year
 
         // Does the task repeat?
         Console.WriteLine("Repeat Task? (Y/N): ");
@@ -70,7 +79,7 @@ public static class TaskManager {
         }
 
         GlobalData.TaskList.Add(item); // Add the new task to the global TaskList
-        jsonHandler.SaveJsonData(); // Save Changes
+        JsonHandler.SaveJsonData(); // Save Changes
     }
 
     public static bool ValidateTaskName(string name) {
@@ -81,7 +90,7 @@ public static class TaskManager {
         }
         
         // Make sure name isn't already in use
-        foreach (Shared.ScheduledTask item in GlobalData.TaskList) {
+        foreach (ScheduledTask item in GlobalData.TaskList) {
             if (item.TaskName == name) { // Compare all task names, return false if there is a match
                 Console.WriteLine("Name already in use. Try Again");
                 return false; 
@@ -110,7 +119,7 @@ public static class TaskManager {
     */
 
     public static bool ValidateDate(string date, string format) {
-
+        
         if (string.IsNullOrWhiteSpace(date)) { // null or blank
 
             Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
@@ -118,11 +127,10 @@ public static class TaskManager {
         } 
 
         if (!DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate)) { // invlaid format
-        
             Console.WriteLine("Invalid Format (MM/dd HH:mm), eg. (03/13 15:00)\nTry again: ");
             return false;
         }
-
+        
         return true; // correct format
 
         //if (DateCheckStatus == 1) Console.WriteLine("Cannot be empty. Try Again: ");
@@ -186,7 +194,7 @@ public static class TaskManager {
         if (index >= GlobalData.TaskList.Count) return;
 
         GlobalData.TaskList.RemoveAt(index); // Remove selected task
-        jsonHandler.SaveJsonData(); // Save changes
+        JsonHandler.SaveJsonData(); // Save changes
     }
 
     /// <summary>

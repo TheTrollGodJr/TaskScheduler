@@ -94,8 +94,10 @@ class TaskService
         TimerThread.Start();
 
         while (true) {
-            if (!commandQueue.IsEmpty && commandQueue.TryDequeue(out string[] front)) {
+            if (!commandQueue.IsEmpty && commandQueue.TryDequeue(out string[] front))
+            {
                 // LOGIC FOR RUNNING FRONT
+                Console.WriteLine($"Running task: {front[0]}");
                 if (front != null) RunPowershell(front[1]);
                 UpdateRepeatTime(front[0]);
             }
@@ -122,15 +124,20 @@ class TaskService
             string currTime = DateTime.Now.ToString("MM/dd HH:mm");
             Console.WriteLine($"Task Looped: {currTime}");
             GlobalData.TaskList = JsonHandler.GetJsonData();
-            foreach (var item in GlobalData.TaskList) {
-                if (item.Date == currTime && !IsQueued(item.TaskName)) commandQueue.Enqueue(new string[] {item.TaskName, item.Command});
+            foreach (var item in GlobalData.TaskList)
+            {
+                Console.WriteLine($"    {item.TaskName}, {item.Date}, {item.RepeatInterval}");
+                //if (item.Date == currTime && !IsQueued(item.TaskName)) commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
+                if (!IsQueued(item.TaskName)) commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
             }
             Thread.Sleep(TimeSpan.FromMinutes(1));
         }
     }
 
-    static bool IsQueued(string taskName) {
-        foreach (var item in commandQueue) {
+    static bool IsQueued(string taskName)
+    {
+        foreach (var item in commandQueue)
+        {
             if (item[0] == taskName) return true;
         }
         return false;
@@ -169,8 +176,10 @@ class TaskService
                 Console.WriteLine($"Powershell output: {output}");
             }
 
-            if (!string.IsNullOrWhiteSpace(error)) {
+            if (!string.IsNullOrWhiteSpace(error))
+            {
                 // WRITE ERROR TO LOG
+                Console.WriteLine($"Powershell error: {error}");
             }
         }
     }
@@ -180,11 +189,14 @@ class TaskService
             case "min": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddMinutes(1).ToString("MM/dd HH:mm");
             case "hr": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddHours(1).ToString("MM/dd HH:mm");
             case "mon":
-                if (trueDate != null) {
+                if (trueDate != null)
+                {
                     DateTime nextMonth = DateTime.ParseExact(date, "MM/dd HH:mm", null).AddMonths(1);
                     int lastDay = DateTime.DaysInMonth(2024, nextMonth.Month);
                     int day = Math.Min(trueDate.Value, lastDay);
-                    return new DateTime(2024, nextMonth.Month, day, nextMonth.Hour, nextMonth.Minute, 0).ToString("MM/dd HH:mm");
+                    string newDate = new DateTime(2024, nextMonth.Month, day, nextMonth.Hour, nextMonth.Minute, 0).ToString("MM/dd HH:mm");
+                    if (newDate.Contains("02/29")) return $"02/28 {newDate.Substring(6)}";
+                    return newDate;
                 }
                 else return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddMonths(1).ToString("MM/dd HH:mm");
             case "week": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddDays(7).ToString("MM/dd HH:mm");
@@ -198,7 +210,9 @@ class TaskService
         foreach (var item in GlobalData.TaskList) {
             if (item.TaskName == taskName) {
                 if (item.Repeats) {
+                    
                     item.Date = UpdateDate(item.Date, item.RepeatInterval, item.TrueDate);
+                    JsonHandler.SaveJsonData();
                     break;
                 }
                 else {

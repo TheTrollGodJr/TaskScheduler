@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v3" manifestVersion="1.0">
-  <application xmlns="urn:schemas-microsoft-com:asm.v3">
-    <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
-  </application>
-</assembly>
