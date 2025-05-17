@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Timers;
 using System.ServiceProcess;
 using System.IO;
+using Serilog;
 
 using Managers;
 
@@ -30,19 +31,24 @@ class TaskService
 
     [STAThread]
     static void Main(string[] args) {
-        if (!CheckAdmin()) {
-            //Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Error: Incorrect Permissions\n  Relaunch application with admin priviledges");
-            //Console.ResetColor();
-            Environment.Exit(1);
+
+        if (!CheckAdmin())
+        {
+            GlobalData.log.Error("Launched with incorrect permissions");
+            throw new Exception("Incorrect Permissions, Relaunch Application With Admin Priviledges");
+            //            Console.WriteLine("Error: Incorrect Permissions\n  Relaunch application with admin priviledges");
+            //            Environment.Exit(1);
         }
+
         
         Directory.CreateDirectory(appDir);
 
         // If we're running with the GUI flag, hide the console
         if (args.Contains("-g") || args.Contains("--gui"))
         {
-            if (!args.Contains("--show-ui")) {
+            GlobalData.log.Information("Starting GUI Process");
+            if (!args.Contains("--show-ui"))
+            {
                 var handle = GetConsoleWindow();
                 ShowWindow(handle, SW_HIDE);  // Hide the console
             }
@@ -50,15 +56,19 @@ class TaskService
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm()); // Launch your form
+            GlobalData.log.Information("Ending GUI Process");
             return;
         }
         else if (args.Contains("-c") || args.Contains("--console"))
         {
+            GlobalData.log.Information("Starting Console Frontend Process");
             ConsoleManager.LaunchConsoleApp();
+            GlobalData.log.Information("Ending Console Frontend Process");
             return;
         }
         else if (args.Contains("-s") || args.Contains("--stop")) {
             if (File.Exists(runLock)) File.Delete(runLock);
+            GlobalData.log.Information("Removed RunLock File to Stop The Backend Process");
             return; // Add functionality to stop the already running background process
         }
 
@@ -72,12 +82,17 @@ class TaskService
 
         if (!File.Exists(runLock)) File.Create(runLock).Close();
         else {
-            Console.WriteLine("Error: Background Process Already Running\nTo force stop use the flag '--stop'");
-            Environment.Exit(1);
+                ///////////////////// ---- TEST THIS
+            GlobalData.log.Error("Failed to Start Backend Process: Backend is Already Running");
+            throw new Exception("Error: Background Process Already Running\nTo force stop use the flag '--stop'");
         }
 
-        if (IsGuiAvailable()) {
-            Thread trayThread = new Thread(() => {
+        GlobalData.log.Information("Starting Backend");
+
+        if (IsGuiAvailable())
+        {
+            Thread trayThread = new Thread(() =>
+            {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 var tray = new Tray();
@@ -87,48 +102,52 @@ class TaskService
             trayThread.SetApartmentState(ApartmentState.STA);
             trayThread.IsBackground = true;
             trayThread.Start();
+            GlobalData.log.Information("Started TrayIcon Thread");
         }
 
         Thread TimerThread = new Thread(new ThreadStart(TaskLoop));
         TimerThread.IsBackground = true;
         TimerThread.Start();
+        GlobalData.log.Information("Started Timer Thread");
 
-        while (true) {
+        while (true)
+        {
+            Thread.Sleep(TimeSpan.FromSeconds(5));
             if (!commandQueue.IsEmpty && commandQueue.TryDequeue(out string[] front))
             {
                 // LOGIC FOR RUNNING FRONT
-                Console.WriteLine($"Running task: {front[0]}");
+                //Console.WriteLine($"Running task: {front[0]}");
+                GlobalData.log.Information($"Running Task: {front[0]}");
                 if (front != null) RunPowershell(front[1]);
                 UpdateRepeatTime(front[0]);
             }
-            if (!File.Exists(runLock)) {
+            if (!File.Exists(runLock))
+            {
+                GlobalData.log.Information("Ending Backend Process");
                 runTimer = false;
                 TimerThread.Join();
+                GlobalData.log.Information("Backend Process Terminated");
                 break;
             }
-            Thread.Sleep(TimeSpan.FromSeconds(5));
         }
 
         File.Delete(runLock);
-        /*
-        timer = new System.Timers.Timer(60000);
-        timer.Elapsed += TaskLoop;
-        timer.AutoReset = true;
-        timer.Enabled = true;
-        */
     }
 
 
     static void TaskLoop() {
         while (runTimer) {
             string currTime = DateTime.Now.ToString("MM/dd HH:mm");
-            Console.WriteLine($"Task Looped: {currTime}");
+            //Console.WriteLine($"Task Looped: {currTime}");
             GlobalData.TaskList = JsonHandler.GetJsonData();
             foreach (var item in GlobalData.TaskList)
             {
-                Console.WriteLine($"    {item.TaskName}, {item.Date}, {item.RepeatInterval}");
-                //if (item.Date == currTime && !IsQueued(item.TaskName)) commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
-                if (!IsQueued(item.TaskName)) commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
+                //Console.WriteLine($"    {item.TaskName}, {item.Date}, {item.RepeatInterval}");
+                if (item.Date == currTime && !IsQueued(item.TaskName))
+                {
+                    GlobalData.log.Information($"Task '{item.TaskName}' Added to The Queue");
+                    commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
+                }
             }
             Thread.Sleep(TimeSpan.FromMinutes(1));
         }
@@ -143,18 +162,6 @@ class TaskService
         return false;
     }
 
-/*
-    static public void QueueManager() {
-        while (true) {
-            if (!commandQueue.IsEmpty && commandQueue.TryDequeue(out string[] front)) {
-                // LOGIC FOR RUNNING FRONT
-                if (front != null) RunPowershell(front[1]);
-                UpdateRepeatTime(front[0]);
-            }
-            Thread.Sleep(1000);
-        }
-    }
-    */
 
     static void RunPowershell(string command) {
         ProcessStartInfo psi = new ProcessStartInfo {
@@ -166,20 +173,24 @@ class TaskService
             CreateNoWindow = true
         };
 
-        using (Process process = Process.Start(psi)) {
+        GlobalData.log.Information($"Running PowerShell Command: {command}");
+
+        using (Process process = Process.Start(psi))
+        {
             string output = process.StandardOutput.ReadToEnd();
             string error = process.StandardError.ReadToEnd();
             process.WaitForExit();
 
-            if (!string.IsNullOrWhiteSpace(output)) {
+            if (!string.IsNullOrWhiteSpace(output))
+            {
                 // WRITE OUTPUT TO LOG
-                Console.WriteLine($"Powershell output: {output}");
+                GlobalData.log.Information($"PowerShell Output: {output}");
             }
 
             if (!string.IsNullOrWhiteSpace(error))
             {
                 // WRITE ERROR TO LOG
-                Console.WriteLine($"Powershell error: {error}");
+                GlobalData.log.Error($"PowerShell Error: {error}");
             }
         }
     }
@@ -207,15 +218,21 @@ class TaskService
     }
 
     static void UpdateRepeatTime(string taskName) {
-        foreach (var item in GlobalData.TaskList) {
-            if (item.TaskName == taskName) {
-                if (item.Repeats) {
-                    
+        
+        foreach (var item in GlobalData.TaskList)
+        {
+            if (item.TaskName == taskName)
+            {
+                if (item.Repeats)
+                {
+                    GlobalData.log.Information($"Updating Repeat Interval For Task '{taskName}'");
                     item.Date = UpdateDate(item.Date, item.RepeatInterval, item.TrueDate);
                     JsonHandler.SaveJsonData();
                     break;
                 }
-                else {
+                else
+                {
+                    GlobalData.log.Information($"Removing Task '{taskName}'");
                     TaskManager.RemoveItem(taskName);
                     break;
                 }
@@ -286,6 +303,7 @@ public class Tray {// : Form {
     */
 
     void StartGuiProcess() {
+        GlobalData.log.Information("Launching Frontend Process");
         string exeName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
         string exePath = Path.Combine(AppContext.BaseDirectory, exeName);
 

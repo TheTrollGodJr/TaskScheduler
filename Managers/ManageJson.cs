@@ -14,7 +14,7 @@ public static class JsonHandler {
     /// Read and return the tasks.json data from AppData Roaming that holds task information
     /// </summary>
     /// <returns>A list of Task structs</returns>
-    public static List<ScheduledTask> GetJsonData() {
+    public static List<ScheduledTask>? GetJsonData() {
 
         if (!Directory.Exists(GlobalData.programDataPath)) Directory.CreateDirectory(GlobalData.programDataPath); // Create a directory in AppData Roaming if it doesn't exist
         
@@ -22,40 +22,70 @@ public static class JsonHandler {
         if (!File.Exists(GlobalData.jsonFilePath)) {
 
             var emptyTaskData = new List<ScheduledTask>(); // Create an empty task list object
-
-            // save file; lock while writing
-            WaitForLock(GlobalData.lockPath);
-            LockJson(GlobalData.lockPath);
-            File.WriteAllText(GlobalData.jsonFilePath, JsonConvert.SerializeObject(emptyTaskData, Formatting.Indented)); // Create a new empty tasks.json
-            UnlockJson(GlobalData.lockPath);
+            SaveJsonData(emptyTaskData);
 
             return emptyTaskData; // Return the new list object
         }
 
         // read file; lock while reading
-        WaitForLock(GlobalData.lockPath);
-        LockJson(GlobalData.lockPath);
+        if (!WaitForLock(GlobalData.lockPath))
+        {
+            GlobalData.log.Error("Json File Timeout; Waited Too Long For it to Unlock");
+            return null;
+        }
+
+        if (!LockJson(GlobalData.lockPath))
+        {
+            GlobalData.log.Error("Could Not Lock Json File");
+            return null;
+        }
         string jsonData = File.ReadAllText(GlobalData.jsonFilePath); // Read data from the json
-        UnlockJson(GlobalData.lockPath);
+        GlobalData.frontLog.Information("Got Json data");
+
+        if (!UnlockJson(GlobalData.lockPath))
+        {
+            GlobalData.frontLog.Error("Could not Unlock Json File");
+            return null;
+        }
 
         if (string.IsNullOrEmpty(jsonData)) return new List<ScheduledTask>(); // If the json is empty, create and return an empty Task list
         
-        List<ScheduledTask> taskList = JsonConvert.DeserializeObject<List<ScheduledTask>>(jsonData); // Convert the json string to a Task list
+        List<ScheduledTask>? taskList = JsonConvert.DeserializeObject<List<ScheduledTask>>(jsonData); // Convert the json string to a Task list
         return taskList; // Return the Task list
     }
 
     /// <summary>
     /// Saves the global TaskList data to a .json in AppData Roaming
     /// </summary>
-    public static void SaveJsonData() {
-        
-        string data = JsonConvert.SerializeObject(GlobalData.TaskList, Formatting.Indented); // Convert the Task List to a string
-        
+    public static bool SaveJsonData(List<ScheduledTask>? items = null)
+    {
+        string data;
+        if (items == null) data = JsonConvert.SerializeObject(GlobalData.TaskList, Formatting.Indented); // Convert the Task List to a string
+        else data = JsonConvert.SerializeObject(items, Formatting.Indented); // Convert the Task List to a string
+
         // Lock json file and save changes
-        WaitForLock(GlobalData.lockPath);
-        LockJson(GlobalData.lockPath);
+        if (!WaitForLock(GlobalData.lockPath))
+        {
+            GlobalData.log.Error("Json File Timeout; Waited Too Long For it to Unlock");
+            return false;
+        }
+
+        if (!LockJson(GlobalData.lockPath))
+        {
+            GlobalData.log.Error("Could Not Lock Json File");
+            return false;
+        }
+
         File.WriteAllText(GlobalData.jsonFilePath, data); // Save the task data
-        UnlockJson(GlobalData.lockPath);
+        GlobalData.log.Information("Saving Json Data");
+
+        if (!UnlockJson(GlobalData.lockPath))
+        {
+            GlobalData.log.Error("Could Not Unlock Json File");
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -123,34 +153,4 @@ public static class JsonHandler {
         return true; // Waited successfully
     }
 
-    /*
-    public static T RunWithLock<T>(Func<T> func, T fallback = default, int timeout = 100, int waitInterval = 50) {
-        if (!WaitForLock(GlobalData.lockPath, timeout, waitInterval)) return fallback;
-        if (!LockJson(GlobalData.lockPath)) return fallback;
-        try {
-            return func();
-        }
-        catch {
-            return fallback;
-        }
-        finally {
-            UnlockJson(GlobalData.lockPath);
-        }
-    }
-
-    public static bool RunWithLock(Action func, int timeout = 100, int waitInterval = 50) {
-        if (!WaitForLock(GlobalData.lockPath, timeout, waitInterval)) return false;
-        if (!LockJson(GlobalData.lockPath)) return false;
-        try {
-            func();
-            return true;
-        }
-        catch {
-            return false;
-        }
-        finally {
-            UnlockJson(GlobalData.lockPath);
-        }
-    }
-    */
 }

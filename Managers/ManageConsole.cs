@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 //using JsonHandler = Managers.JsonHandler;
 //using TaskManager = Managers.TaskManager.TaskManager;
-using Managers;
+using Serilog;
 
 namespace Managers;
 
@@ -24,20 +24,23 @@ public static class ConsoleManager {
     public static void LaunchConsoleApp() {
         JsonHandler.UnlockJson(GlobalData.lockPath);
 
+        GlobalData.frontLog.Information("Started Frontend Console Process");
+
         var options = new List<string> { "Create Task", "View Tasks", "Edit Task", "Remove Task", "Stop Manager -- Not Implemented", "Restart Manager -- Not Implemented", "Exit" };
         
         while (true) {
             int choice = ShowMenu(options, "Welcome to Task Scheduler");
 
             //Console.Clear();
-            switch (choice) {
+            switch (choice)
+            {
                 case 0: // Add Task
                     TaskManager.NewTask();
                     JsonHandler.SaveJsonData();
                     break;
                 case 1: // View Tasks
                     ViewTasks();
-                    break; 
+                    break;
                 case 2: // Edit Tasks
                     EditMenu();
                     break;
@@ -49,7 +52,8 @@ public static class ConsoleManager {
                 case 5: // Restart Manager
                     break;
                 case 6: // Exit
-                    Environment.Exit(0); break;
+                    GlobalData.frontLog.Information("Closed Console Frontend");
+                    break;
                 default: break;
             }
         }
@@ -116,7 +120,8 @@ public static class ConsoleManager {
         }
     }
 
-    static void editAttribute(int taskListIndex, int itemIndex) {
+    static void editAttribute(int taskListIndex, int itemIndex)
+    {
         List<string> attrList = ["Task Name", "Date", "Task Repeat?", "Repeat Interval", "Command"];
         Console.Clear();
         Console.Write($"Input new data for ");
@@ -134,14 +139,17 @@ public static class ConsoleManager {
         bool invalidInput = true;
 
 
-        while (invalidInput) {
-            switch (itemIndex) {
-                case 0: 
+        while (invalidInput)
+        {
+            switch (itemIndex)
+            {
+                case 0:
                     Console.WriteLine("\nTask Name: ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
 
-                    if (TaskManager.ValidateTaskName(inp)) {
+                    if (TaskManager.ValidateTaskName(inp))
+                    {
                         GlobalData.TaskList[taskListIndex].TaskName = inp;
                         invalidInput = false;
                     }
@@ -150,7 +158,8 @@ public static class ConsoleManager {
                     Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
-                    if (TaskManager.ValidateDate(inp, "MM/dd HH:mm")) {
+                    if (TaskManager.ValidateDate(inp, "MM/dd HH:mm"))
+                    {
                         GlobalData.TaskList[taskListIndex].Date = inp;
                         invalidInput = false;
                     }
@@ -159,12 +168,15 @@ public static class ConsoleManager {
                     Console.WriteLine("\nRepeat Task? (Y/N): ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
-                    if (TaskManager.ValidateRepeatTask(inp)) {
-                        if (inp == "Y") {
+                    if (TaskManager.ValidateRepeatTask(inp))
+                    {
+                        if (inp == "Y")
+                        {
                             GlobalData.TaskList[taskListIndex].Repeats = true;
                             itemIndex++;
                         }
-                        else {
+                        else
+                        {
                             GlobalData.TaskList[taskListIndex].Repeats = false;
                             GlobalData.TaskList[taskListIndex].RepeatInterval = null;
                             invalidInput = false;
@@ -172,21 +184,25 @@ public static class ConsoleManager {
                     }
                     break;
                 case 3:
-                    if (!GlobalData.TaskList[taskListIndex].Repeats) {
+                    if (!GlobalData.TaskList[taskListIndex].Repeats)
+                    {
                         Console.Write("\nCannot change Repeat Interval if Repeating is off.\n(Press any key to go back)");
                         Console.ReadKey(true);
                         return;
                     }
                     Console.WriteLine("\nRepeat Interval (min, hr, day, week, mon, year): ");
                     inp = Console.ReadLine();
-                    if (inp == "!EXIT?") {
-                        if (GlobalData.TaskList[taskListIndex].Repeats && GlobalData.TaskList[taskListIndex].RepeatInterval == null) {
+                    if (inp == "!EXIT?")
+                    {
+                        if (GlobalData.TaskList[taskListIndex].Repeats && GlobalData.TaskList[taskListIndex].RepeatInterval == null)
+                        {
                             Console.WriteLine("Cannot exit without specifiying a Repeat Interval");
                             break;
                         }
                         else return;
                     }
-                    if (TaskManager.ValidateRepeatInterval(inp)) {
+                    if (TaskManager.ValidateRepeatInterval(inp))
+                    {
                         GlobalData.TaskList[taskListIndex].RepeatInterval = inp;
                         invalidInput = false;
                     }
@@ -195,7 +211,8 @@ public static class ConsoleManager {
                     Console.WriteLine("\nTerminal Command: ");
                     inp = Console.ReadLine();
                     if (inp == "!EXIT?") return;
-                    if (!string.IsNullOrEmpty(inp)) {
+                    if (!string.IsNullOrEmpty(inp))
+                    {
                         GlobalData.TaskList[taskListIndex].Command = inp;
                         invalidInput = false;
                     }
@@ -206,6 +223,7 @@ public static class ConsoleManager {
 
         //JsonHandler.SaveJsonData();
         JsonHandler.SaveJsonData();
+        GlobalData.frontLog.Information($"Edited Attribute '{attrList[itemIndex]}' from Task {GlobalData.TaskList[taskListIndex].TaskName}");
     }
 
     static List<string> TaskToList(ScheduledTask item, bool fixedLength = false) {
@@ -272,7 +290,7 @@ public static class ConsoleManager {
 
         // Update loop
         do {
-
+            Thread.Sleep(10);
             // Clear and print title
             Console.Clear();
             Console.WriteLine(prompt + "\n");
@@ -338,10 +356,12 @@ public static class ConsoleManager {
             else if (key == ConsoleKey.DownArrow) selected = (selected + 1) % taskNames.Count; // Select down
             else if (key == ConsoleKey.Enter) { // Confirm deletion selection
 
-                if (RemoveConfirmation(taskNames[selected])) { // Run function to confirm deletion
+                if (RemoveConfirmation(taskNames[selected]))
+                { // Run function to confirm deletion
 
                     // Remove task
                     TaskManager.RemoveItem(taskNames[selected]);
+                    GlobalData.frontLog.Information($"Removed Task '{taskNames[selected]}'");
                     taskNames.RemoveAt(selected);
                     }
 

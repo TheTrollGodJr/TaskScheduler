@@ -5,7 +5,9 @@
 - [ ] Create backend functionality
 - [ ] Look into combining the frontend and backend into a single exe that can swap between non-headless and headless
 - [ ] autostart backend as a Windows Service.
-- [ ] Create a log file in AppData Roaming that the backend adds to when a task in run.
+- [ ] Create log files
+- [ ] Add comments to all frontend
+- [ ] Add comments to all backend
 
 ## Frontend ToDo
 - [X] json file lock when reading/writing
@@ -16,6 +18,7 @@
 - [ ] Export tasks list as csv
 - [ ] Fix error for checking if a time inputed is valid
 - [ ] Check that files are being store to "Program Data"
+- [ ] Handle edge cases when TaskList is null
 
 ## GUI
 - [ ] Make GUI
