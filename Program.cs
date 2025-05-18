@@ -67,8 +67,7 @@ class TaskService
             return;
         }
         else if (args.Contains("-s") || args.Contains("--stop")) {
-            if (File.Exists(runLock)) File.Delete(runLock);
-            GlobalData.log.Information("Removed RunLock File to Stop The Backend Process");
+            StopBackend();
             return; // Add functionality to stop the already running background process
         }
 
@@ -81,8 +80,9 @@ class TaskService
         }
 
         if (!File.Exists(runLock)) File.Create(runLock).Close();
-        else {
-                ///////////////////// ---- TEST THIS
+        else
+        {
+            ///////////////////// ---- TEST THIS
             GlobalData.log.Error("Failed to Start Backend Process: Backend is Already Running");
             throw new Exception("Error: Background Process Already Running\nTo force stop use the flag '--stop'");
         }
@@ -113,13 +113,17 @@ class TaskService
         while (true)
         {
             Thread.Sleep(TimeSpan.FromSeconds(5));
-            if (!commandQueue.IsEmpty && commandQueue.TryDequeue(out string[] front))
+            if (!commandQueue.IsEmpty && commandQueue.TryDequeue(out string[]? front))
             {
                 // LOGIC FOR RUNNING FRONT
                 //Console.WriteLine($"Running task: {front[0]}");
-                GlobalData.log.Information($"Running Task: {front[0]}");
-                if (front != null) RunPowershell(front[1]);
-                UpdateRepeatTime(front[0]);
+
+                if (front != null)
+                {
+                    GlobalData.log.Information($"Running Task: {front[0]}");
+                    RunPowershell(front[1]);
+                    UpdateRepeatTime(front[0]);
+                }
             }
             if (!File.Exists(runLock))
             {
@@ -129,21 +133,41 @@ class TaskService
                 GlobalData.log.Information("Backend Process Terminated");
                 break;
             }
+            if (!runTimer)
+            {
+                GlobalData.log.Error("runTimer Stopped Prematurely; Terminating Backend process");
+                break;
+            }
         }
 
-        File.Delete(runLock);
+        StopBackend();
     }
 
+    public static void StopBackend()
+    {
+        if (File.Exists(runLock)) File.Delete(runLock);
+        GlobalData.log.Information("Removed RunLock File to Stop The Backend Process");
+    }
 
-    static void TaskLoop() {
-        while (runTimer) {
+    static void TaskLoop()
+    {
+        while (runTimer)
+        {
             string currTime = DateTime.Now.ToString("MM/dd HH:mm");
             //Console.WriteLine($"Task Looped: {currTime}");
             GlobalData.TaskList = JsonHandler.GetJsonData();
+
+            if (GlobalData.TaskList == null)
+            {
+                GlobalData.log.Error("Task Loop Terminated; TaskList is Null");
+                runTimer = false;
+                return;
+            }
+
             foreach (var item in GlobalData.TaskList)
             {
-                //Console.WriteLine($"    {item.TaskName}, {item.Date}, {item.RepeatInterval}");
-                if (item.Date == currTime && !IsQueued(item.TaskName))
+
+                if (item.Date == currTime && !IsQueued(item.TaskName) && item.TaskName != null && item.Command != null)
                 {
                     GlobalData.log.Information($"Task '{item.TaskName}' Added to The Queue");
                     commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
@@ -153,8 +177,10 @@ class TaskService
         }
     }
 
-    static bool IsQueued(string taskName)
+    static bool IsQueued(string? taskName)
     {
+        if (taskName == null) return false;
+
         foreach (var item in commandQueue)
         {
             if (item[0] == taskName) return true;
@@ -175,8 +201,13 @@ class TaskService
 
         GlobalData.log.Information($"Running PowerShell Command: {command}");
 
-        using (Process process = Process.Start(psi))
+        using (Process? process = Process.Start(psi))
         {
+            if (process == null)
+            {
+                GlobalData.log.Error("Could Not Run PowerShell Command; PowerShell Process Was Null");
+                return;
+            }
             string output = process.StandardOutput.ReadToEnd();
             string error = process.StandardError.ReadToEnd();
             process.WaitForExit();
@@ -184,13 +215,13 @@ class TaskService
             if (!string.IsNullOrWhiteSpace(output))
             {
                 // WRITE OUTPUT TO LOG
-                GlobalData.log.Information($"PowerShell Output: {output}");
+                GlobalData.log.Information($"PowerShell Output:\n{output}");
             }
 
             if (!string.IsNullOrWhiteSpace(error))
             {
                 // WRITE ERROR TO LOG
-                GlobalData.log.Error($"PowerShell Error: {error}");
+                GlobalData.log.Error($"PowerShell Error:\n{error}");
             }
         }
     }
@@ -218,12 +249,17 @@ class TaskService
     }
 
     static void UpdateRepeatTime(string taskName) {
+        if (GlobalData.TaskList == null)
+        {
+            GlobalData.log.Error("Cannot Update Repeat Time; TaskList is Null");
+            return;
+        }
         
         foreach (var item in GlobalData.TaskList)
         {
             if (item.TaskName == taskName)
             {
-                if (item.Repeats)
+                if (item.Repeats && item.Date != null && item.RepeatInterval != null)
                 {
                     GlobalData.log.Information($"Updating Repeat Interval For Task '{taskName}'");
                     item.Date = UpdateDate(item.Date, item.RepeatInterval, item.TrueDate);
@@ -259,57 +295,59 @@ class TaskService
     }
 }
 
-public class Tray {// : Form {
-    private NotifyIcon trayIcon;
-    private Thread guiThread;
-    private MainForm guiForm;
-    public void AddToSystemTray() {
-        string exeDir = Path.GetDirectoryName(System.AppContext.BaseDirectory);
+public class Tray
+{// : Form {
+    private NotifyIcon? trayIcon;
+    private ContextMenuStrip? trayMenu;
+    public void AddToSystemTray()
+    {
+        string? exeDir = Path.GetDirectoryName(System.AppContext.BaseDirectory);
+        if (exeDir == null)
+        {
+            GlobalData.log.Error("Could Not Get Path to The Working EXE to Create trayIcon; Terminating Backend Process");
+            TaskService.StopBackend();
+            return;
+        }
         string iconPath = Path.Combine(exeDir, "files", "TaskIcon.ico");
+
+        trayMenu = new ContextMenuStrip();
+        trayMenu.Items.Add("Open Console View", null, (s, e) => StartGuiProcess("-c"));
+        trayMenu.Items.Add("Open GUI View", null, (s, e) => StartGuiProcess("-g"));
+        trayMenu.Items.Add("Stop Manager", null, (s, e) => TaskService.StopBackend());
 
         trayIcon = new NotifyIcon();
         trayIcon.Icon = new System.Drawing.Icon(iconPath);
         trayIcon.Text = "Sherman Task Scheduler";
         trayIcon.Visible = true;
+        trayIcon.ContextMenuStrip = trayMenu;
 
-        trayIcon.MouseClick += (sender, e) => {
-            if (e.Button == MouseButtons.Left) {
-                StartGuiProcess();
+        trayIcon.MouseClick += (sender, e) =>
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                StartGuiProcess("-g");
             }
         };
     }
 
-/*
-    void OpenGui() {
-        if (guiForm != null && !guiForm.IsDisposed) {
-            guiForm.Invoke(new Action(() => {
-                if (!guiForm.Visible) guiForm.Show();
-                guiForm.BringToFront();
-            }));
+    void StartGuiProcess(string arg)
+    {
+        GlobalData.log.Information("Launching Frontend Process");
+        var file = Process.GetCurrentProcess().MainModule?.FileName;//.MainModule.FileName;
+        if (file == null)
+        {
+            GlobalData.log.Error("Could Not Get Path to The Working EXE to Launch a Frontend Process; Terminating backend Process");
+            TaskService.StopBackend();
             return;
         }
 
-        guiThread = new Thread(() => {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            guiForm = new MainForm();
-            Application.Run(guiForm);
-        });
-
-        guiThread.SetApartmentState(ApartmentState.STA); // WinForms requires STA
-        guiThread.IsBackground = true;
-        guiThread.Start();
-    }
-    */
-
-    void StartGuiProcess() {
-        GlobalData.log.Information("Launching Frontend Process");
-        string exeName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
+        string exeName = Path.GetFileName(file);
         string exePath = Path.Combine(AppContext.BaseDirectory, exeName);
 
-        Process.Start(new ProcessStartInfo {
+        Process.Start(new ProcessStartInfo
+        {
             FileName = exePath,
-            Arguments = "-g",
+            Arguments = arg,
             UseShellExecute = true,
             Verb = "Runas"
         });

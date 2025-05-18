@@ -2,10 +2,10 @@
 - [X] create home menu screen -- abstract to a GUI eventually
 - [X] Finish front end functionality for creating/editing/removing/viewing tasks
 - [X] Create separate frontend/backend exe 
-- [ ] Create backend functionality
-- [ ] Look into combining the frontend and backend into a single exe that can swap between non-headless and headless
-- [ ] autostart backend as a Windows Service.
-- [ ] Create log files
+- [X] Create backend functionality
+- [X] Look into combining the frontend and backend into a single exe that can swap between non-headless and headless
+- [ ] ~~autostart backend as a Windows Service~~
+- [X] Create log files
 - [ ] Add comments to all frontend
 - [ ] Add comments to all backend
 
@@ -14,11 +14,12 @@
 - [X] add View, Edit, and Remove functionality
 - [X] Create Home Menu loop that exits with Exit
 - [ ] Add option to stop/restart the backend
-- [ ] Add reload option to get a updated task list
+- [ ] Add refresh option to get a updated task list
 - [ ] Export tasks list as csv
-- [ ] Fix error for checking if a time inputed is valid
-- [ ] Check that files are being store to "Program Data"
-- [ ] Handle edge cases when TaskList is null
+- [X] Fix error for checking if a time inputed is valid
+- [X] Check that files are being store to "Program Data"
+- [X] Handle edge cases when TaskList is null
+- [ ] Add a way to exit the NewTask() screen
 
 ## GUI
 - [ ] Make GUI
@@ -29,11 +30,14 @@
 - [X] json file lock when reading
 - [X] Create a queue for tasks that need to be run.
 - ~~[ ] Make backend into a windows service~~
-- [ ] Log file
+- [X] Log file
 - [X] add requirement for admin access to run -- might interfer with autostart
 - [X] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
 - [X] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
 - [ ] Add a catch system if the task command fails, add a way to notify the user and add to the log
 - [X] Stop a task from being added to the queue if it is already in the queue
 - [X] Launch frontend gui as an entirely new process using -g
-- [ ] Test everything
+- [X] Test everything
+- [ ] Move logs to a subfolder
+- [ ] Remove all logs over 7 days old
+- [ ] Add UAC prompt

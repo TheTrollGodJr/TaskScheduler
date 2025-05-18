@@ -22,7 +22,7 @@ public static class JsonHandler {
         if (!File.Exists(GlobalData.jsonFilePath)) {
 
             var emptyTaskData = new List<ScheduledTask>(); // Create an empty task list object
-            SaveJsonData(emptyTaskData);
+            SaveJsonData(true);
 
             return emptyTaskData; // Return the new list object
         }
@@ -57,11 +57,16 @@ public static class JsonHandler {
     /// <summary>
     /// Saves the global TaskList data to a .json in AppData Roaming
     /// </summary>
-    public static bool SaveJsonData(List<ScheduledTask>? items = null)
+    public static bool SaveJsonData(bool saveEmptyJson = false)
     {
         string data;
-        if (items == null) data = JsonConvert.SerializeObject(GlobalData.TaskList, Formatting.Indented); // Convert the Task List to a string
-        else data = JsonConvert.SerializeObject(items, Formatting.Indented); // Convert the Task List to a string
+        if (saveEmptyJson == false) data = JsonConvert.SerializeObject(GlobalData.TaskList, Formatting.Indented); // Convert the Task List to a string
+        else
+        {
+            var rawData = new List<ScheduledTask>();
+            data = JsonConvert.SerializeObject(rawData, Formatting.Indented); // Convert the Task List to a string
+        }
+            
 
         // Lock json file and save changes
         if (!WaitForLock(GlobalData.lockPath))

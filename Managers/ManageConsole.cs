@@ -53,18 +53,35 @@ public static class ConsoleManager {
                     break;
                 case 6: // Exit
                     GlobalData.frontLog.Information("Closed Console Frontend");
+                    Environment.Exit(0);
                     break;
                 default: break;
             }
         }
     }
 
-    static void EditMenu() {
-        int[] selection = [0,0]; // Row, Column
+    public static void ErrorScreen(string message)
+    {
+        GlobalData.frontLog.Error($"{message}");
+        Console.Clear();
+        Console.WriteLine($"Error:\n    {message}\n\nPress Enter To Exit");
+        Console.ReadLine();
+    }
+
+    static void EditMenu()
+    {
+        if (GlobalData.TaskList == null)
+        {
+            ErrorScreen("Could Not Edit TaskList; TaskList is Null");
+            return;
+        }
+
+        int[] selection = [0, 0]; // Row, Column
         ConsoleKey key;
 
         // Check if the TaskList is empty
-        if (GlobalData.TaskList.Count == 0) {
+        if ((GlobalData.TaskList?.Count ?? 0) == 0)
+        {
 
             // Clear and print title
             Console.Clear();
@@ -75,7 +92,8 @@ public static class ConsoleManager {
             return;
         }
 
-        while (true) {
+        while (true)
+        {
 
             // Clear and print title
             Console.Clear();
@@ -88,25 +106,36 @@ public static class ConsoleManager {
             Console.ResetColor();
 
             int printLine = 0;
-            foreach (var item in GlobalData.TaskList) {
-                //List<string> itemList = [item.TaskName, item.Date, item.Repeats.ToString(), item.RepeatInterval, item.Command];
-                List<string> itemList = TaskToList(item, true);
-            
-                int column = 0;
-                Console.Write(" ");
-                foreach (string str in itemList) {
-                    if (printLine == selection[0] && column == selection[1]) {
-                        Console.BackgroundColor = ConsoleColor.White;
-                        Console.ForegroundColor = ConsoleColor.Black;
+            if (GlobalData.TaskList != null)
+            {
+                foreach (var item in GlobalData.TaskList)
+                {
+                    //List<string> itemList = [item.TaskName, item.Date, item.Repeats.ToString(), item.RepeatInterval, item.Command];
+                    List<string> itemList = TaskToList(item, true);
+
+                    int column = 0;
+                    Console.Write(" ");
+                    foreach (string str in itemList)
+                    {
+                        if (printLine == selection[0] && column == selection[1])
+                        {
+                            Console.BackgroundColor = ConsoleColor.White;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                        }
+                        Console.Write($" {str} ");
+                        Console.ResetColor();
+                        if (column != 4) Console.Write("|");
+                        column++;
                     }
-                    Console.Write($" {str} ");
-                    Console.ResetColor();
-                    if (column != 4) Console.Write("|");
-                    column++;
+                    Console.Write("\n");
+
+                    printLine++;
                 }
-                Console.Write("\n");
-            
-                printLine++;
+            }
+            else
+            {
+                ErrorScreen("Could Not Edit TaskList; TaskList is Null");
+                return;
             }
 
             key = Console.ReadKey(true).Key;
@@ -114,7 +143,7 @@ public static class ConsoleManager {
             if (key == ConsoleKey.RightArrow && selection[1] != 4) selection[1]++;
             else if (key == ConsoleKey.LeftArrow && selection[1] != 0) selection[1]--;
             else if (key == ConsoleKey.UpArrow && selection[0] != 0) selection[0]--;
-            else if (key == ConsoleKey.DownArrow && selection[0] != GlobalData.TaskList.Count-1) selection[0]++;
+            else if (key == ConsoleKey.DownArrow && selection[0] != GlobalData.TaskList.Count - 1) selection[0]++;
             else if (key == ConsoleKey.Escape) break;
             else if (key == ConsoleKey.Enter) editAttribute(selection[0], selection[1]);
         }
@@ -123,19 +152,27 @@ public static class ConsoleManager {
     static void editAttribute(int taskListIndex, int itemIndex)
     {
         List<string> attrList = ["Task Name", "Date", "Task Repeat?", "Repeat Interval", "Command"];
-        Console.Clear();
-        Console.Write($"Input new data for ");
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write($"{attrList[itemIndex]}");
-        Console.ResetColor();
-        Console.Write(" in task ");
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write($"{GlobalData.TaskList[taskListIndex].TaskName}:\n");
-        Console.ResetColor();
+        if (GlobalData.TaskList != null)
+        {
+            Console.Clear();
+            Console.Write($"Input new data for ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"{attrList[itemIndex]}");
+            Console.ResetColor();
+            Console.Write(" in task ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"{GlobalData.TaskList[taskListIndex].TaskName}:\n");
+            Console.ResetColor();
+        }
+        else
+        {
+            ErrorScreen("Could Not Edit TaskList; TaskList is Null");
+            return;
+        }
 
         Console.WriteLine("Type '!EXIT?' to go back");
 
-        string inp;// = Console.ReadLine();
+        string? inp;// = Console.ReadLine();
         bool invalidInput = true;
 
 
@@ -236,6 +273,12 @@ public static class ConsoleManager {
     /// </summary>
     static void ViewTasks() {
 
+        if (GlobalData.TaskList == null)
+        {
+            ErrorScreen("Could Not View TaskList; TaskList is Null");
+            return;
+        }
+
         // Clear and print title
         Console.Clear();
         Console.WriteLine("All Tasks\n(Press any key to go back)\n");
@@ -269,9 +312,10 @@ public static class ConsoleManager {
     /// <param name="str">The string to be modified</param>
     /// <param name="len">The length to set the string to</param>
     /// <returns>A string at the specified length</returns>
-    static string FixedLength(string str, int len) {
+    static string FixedLength(string? str, int len) {
 
-        if (str.Length > len) return str.Substring(0, len); // Trim string if its too long
+        if (str == null) return "";
+        else if (str.Length > len) return str.Substring(0, len); // Trim string if its too long
         else if (str.Length < len) return str.PadRight(len); // Pad string if its too short
         return str; // Return without changing
     }
@@ -320,12 +364,19 @@ public static class ConsoleManager {
     /// </summary>
     static void RemoveMenu() {
         // Initialize variables
-        List<string> taskNames = TaskManager.GetTaskNames(); // Get task names
+        List<string>? taskNames = TaskManager.GetTaskNames(); // Get task names
         ConsoleKey key; // Console key object
         int selected = 0; // Selected task index
 
+        if (taskNames == null)
+        {
+            ConsoleManager.ErrorScreen("Could Not Open RemoveMenu; TaskList is Null");
+            return;
+        }
+
         // If there are no saved tasks
-        if (taskNames.Count == 0) {
+        if (taskNames.Count == 0)
+        {
 
             // Display message then wait for any key to return to the main menu
             Console.Clear();
@@ -382,13 +433,13 @@ public static class ConsoleManager {
         Console.Clear();
         Console.WriteLine($"Are you sure you want to delete task: {name}? (YES/NO)");
 
-        string inp = Console.ReadLine().ToUpper(); // Get user input
+        string? inp = Console.ReadLine();//.ToUpper(); // Get user input
 
         // Make sure the input is valid; either YES or NO
-        while (inp != "YES" && inp != "NO") {
+        while (inp == null || (inp.ToUpper() != "YES" && inp.ToUpper() != "NO")) {
 
             Console.WriteLine("Invalid Input. Try Again (YES/NO)");
-            inp = Console.ReadLine().ToUpper();
+            inp = Console.ReadLine();
         }
 
         // Return true if YES, return false if NO
