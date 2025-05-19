@@ -10,6 +10,8 @@
 - [ ] Add comments to all backend
 - [ ] Reorganize all code
 - [ ] Create installer exe using Inno Setup
+- [ ] Add SHA-256 hash to release for extra security
+- [ ] Create actual ReadMe.md with project info
 
 ## Frontend ToDo
 - [X] json file lock when reading/writing
@@ -36,13 +38,13 @@
 - [X] add requirement for admin access to run -- might interfer with autostart
 - [X] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
 - [X] When the backend is running, add it to the system tray. Prompt the frontend when the it is clicked on in the system tray.
-- [ ] Add a catch system if the task command fails, add a way to notify the user and add to the log
+- [X] Add a catch system if the task command fails, add a way to notify the user and add to the log
 - [X] Stop a task from being added to the queue if it is already in the queue
 - [X] Launch frontend gui as an entirely new process using -g
 - [X] Test everything
 - [X] Move logs to a subfolder
 - [X] Remove all logs over 7 days old
-- [ ] Add UAC prompt
+- [X] Add UAC prompt
 - [X] Create stop signal file instead of removing running.lock -- keep running to lock to prevent lauching more backend processes
-- [ ] Make backend close quicker by interrupting the TaskLoop Thread.Sleep() instead of waiting a full minute
+- [X] Make backend close quicker by interrupting the TaskLoop Thread.Sleep() instead of waiting a full minute
 - [ ] Clean up the main Program.cs; move most functions into different files
