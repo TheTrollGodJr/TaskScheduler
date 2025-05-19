@@ -38,6 +38,7 @@
 - [X] Stop a task from being added to the queue if it is already in the queue
 - [X] Launch frontend gui as an entirely new process using -g
 - [X] Test everything
-- [ ] Move logs to a subfolder
+- [X] Move logs to a subfolder
 - [ ] Remove all logs over 7 days old
 - [ ] Add UAC prompt
+- [X] Create stop signal file instead of removing running.lock -- keep running to lock to prevent lauching more backend processes

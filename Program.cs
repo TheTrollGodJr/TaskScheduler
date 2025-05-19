@@ -28,6 +28,7 @@ class TaskService
     private static bool runTimer = true;
     private static string appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ShermanTaskScheduler");
     private static string runLock = Path.Combine(appDir, "running.lock");
+    private static string stopSignal = Path.Combine(appDir, "stopSignal");
 
     [STAThread]
     static void Main(string[] args) {
@@ -66,25 +67,36 @@ class TaskService
             GlobalData.log.Information("Ending Console Frontend Process");
             return;
         }
-        else if (args.Contains("-s") || args.Contains("--stop")) {
-            StopBackend();
-            return; // Add functionality to stop the already running background process
+        else if (args.Contains("-s") || args.Contains("--stop"))
+        {
+            GlobalData.log.Information("Stop Flag Signaled From External Process");
+            SignalStopBackend();
+            return;
+        }
+        else if (args.Contains("-fs") || args.Contains("--force-stop"))
+        {
+            GlobalData.log.Information("Force Stop Flag Signaled From External Process");
+            CloseBackend();
+            return;
         }
 
-        ///
-        /// HIDE CONSOLE WINDOW
-        /// 
-        if (!args.Contains("--show-ui")) {
-            var handle = GetConsoleWindow();
-            ShowWindow(handle, SW_HIDE);
-        }
 
-        if (!File.Exists(runLock)) File.Create(runLock).Close();
+        if (File.Exists(stopSignal))
+        {
+            GlobalData.log.Error("Failed to Start Backend Process; Stop Signal Still Exists");
+            throw new Exception("Error: Failed to Start Backend Process; Stop Signal Still Exists\nTo Force Stop Use The Flag '--force-stop'");
+        }
+        else if (!File.Exists(runLock)) File.Create(runLock).Close();
         else
         {
-            ///////////////////// ---- TEST THIS
             GlobalData.log.Error("Failed to Start Backend Process: Backend is Already Running");
-            throw new Exception("Error: Background Process Already Running\nTo force stop use the flag '--stop'");
+            throw new Exception("Error: Background Process Already Running\nTo Force Stop Use The Flag '--force-stop'");
+        }
+
+        if (!args.Contains("--show-ui"))
+        {
+            var handle = GetConsoleWindow();
+            ShowWindow(handle, SW_HIDE);
         }
 
         GlobalData.log.Information("Starting Backend");
@@ -125,13 +137,20 @@ class TaskService
                     UpdateRepeatTime(front[0]);
                 }
             }
-            if (!File.Exists(runLock))
+            if (File.Exists(stopSignal))
             {
                 GlobalData.log.Information("Ending Backend Process");
                 runTimer = false;
                 TimerThread.Join();
                 GlobalData.log.Information("Backend Process Terminated");
                 break;
+            }
+            else if (!File.Exists(runLock))
+            {
+                GlobalData.log.Error("Run Lock Unexpected Removed; Terminating Backend");
+                runTimer = false;
+                TimerThread.Join();
+                GlobalData.log.Information("Backend Process Terminated");
             }
             if (!runTimer)
             {
@@ -140,13 +159,25 @@ class TaskService
             }
         }
 
-        StopBackend();
+        CloseBackend();
     }
 
-    public static void StopBackend()
+    public static void SignalStopBackend()
+    {
+        if (!File.Exists(stopSignal))
+        {
+            File.Create(stopSignal);
+            GlobalData.log.Information("Created Stop Signal File");
+        }
+    }
+
+    public static void CloseBackend()
     {
         if (File.Exists(runLock)) File.Delete(runLock);
-        GlobalData.log.Information("Removed RunLock File to Stop The Backend Process");
+        GlobalData.log.Information("Removed RunLock File");
+        Thread.Sleep(5);
+        if (File.Exists(stopSignal)) File.Delete(stopSignal);
+        GlobalData.log.Information("Removed stopSignal File");
     }
 
     static void TaskLoop()
@@ -297,7 +328,7 @@ class TaskService
 
 public class Tray
 {// : Form {
-    private NotifyIcon? trayIcon;
+    private static NotifyIcon? trayIcon;
     private ContextMenuStrip? trayMenu;
     public void AddToSystemTray()
     {
@@ -305,7 +336,7 @@ public class Tray
         if (exeDir == null)
         {
             GlobalData.log.Error("Could Not Get Path to The Working EXE to Create trayIcon; Terminating Backend Process");
-            TaskService.StopBackend();
+            TaskService.SignalStopBackend();
             return;
         }
         string iconPath = Path.Combine(exeDir, "files", "TaskIcon.ico");
@@ -313,7 +344,7 @@ public class Tray
         trayMenu = new ContextMenuStrip();
         trayMenu.Items.Add("Open Console View", null, (s, e) => StartGuiProcess("-c"));
         trayMenu.Items.Add("Open GUI View", null, (s, e) => StartGuiProcess("-g"));
-        trayMenu.Items.Add("Stop Manager", null, (s, e) => TaskService.StopBackend());
+        trayMenu.Items.Add("Stop Manager", null, (s, e) => TaskService.SignalStopBackend());
 
         trayIcon = new NotifyIcon();
         trayIcon.Icon = new System.Drawing.Icon(iconPath);
@@ -328,6 +359,17 @@ public class Tray
                 StartGuiProcess("-g");
             }
         };
+
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+    }
+
+    static void OnProcessExit(object? sender, EventArgs e)
+    {
+        if (trayIcon != null)
+        {
+            trayIcon.Visible = false;
+            trayIcon.Dispose();
+        }
     }
 
     void StartGuiProcess(string arg)
@@ -336,8 +378,7 @@ public class Tray
         var file = Process.GetCurrentProcess().MainModule?.FileName;//.MainModule.FileName;
         if (file == null)
         {
-            GlobalData.log.Error("Could Not Get Path to The Working EXE to Launch a Frontend Process; Terminating backend Process");
-            TaskService.StopBackend();
+            GlobalData.log.Error("Failed to Launch The Frontend Process; Could Not Get Path to The Working Exe");
             return;
         }
 
