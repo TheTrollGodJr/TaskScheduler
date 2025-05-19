@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using Managers;
 
 //namespace Managers.jsonHandler;
 namespace Managers;
@@ -30,21 +29,21 @@ public static class JsonHandler {
         // read file; lock while reading
         if (!WaitForLock(GlobalData.lockPath))
         {
-            GlobalData.log.Error("Json File Timeout; Waited Too Long For it to Unlock");
+            LogManager.log.Error("Json File Timeout; Waited Too Long For it to Unlock");
             return null;
         }
 
         if (!LockJson(GlobalData.lockPath))
         {
-            GlobalData.log.Error("Could Not Lock Json File");
+            LogManager.log.Error("Could Not Lock Json File");
             return null;
         }
         string jsonData = File.ReadAllText(GlobalData.jsonFilePath); // Read data from the json
-        GlobalData.frontLog.Information("Got Json data");
+        LogManager.frontLog.Information("Got Json data");
 
         if (!UnlockJson(GlobalData.lockPath))
         {
-            GlobalData.frontLog.Error("Could not Unlock Json File");
+            LogManager.frontLog.Error("Could not Unlock Json File");
             return null;
         }
 
@@ -71,22 +70,22 @@ public static class JsonHandler {
         // Lock json file and save changes
         if (!WaitForLock(GlobalData.lockPath))
         {
-            GlobalData.log.Error("Json File Timeout; Waited Too Long For it to Unlock");
+            LogManager.log.Error("Json File Timeout; Waited Too Long For it to Unlock");
             return false;
         }
 
         if (!LockJson(GlobalData.lockPath))
         {
-            GlobalData.log.Error("Could Not Lock Json File");
+            LogManager.log.Error("Could Not Lock Json File");
             return false;
         }
 
         File.WriteAllText(GlobalData.jsonFilePath, data); // Save the task data
-        GlobalData.log.Information("Saving Json Data");
+        LogManager.log.Information("Saving Json Data");
 
         if (!UnlockJson(GlobalData.lockPath))
         {
-            GlobalData.log.Error("Could Not Unlock Json File");
+            LogManager.log.Error("Could Not Unlock Json File");
             return false;
         }
 

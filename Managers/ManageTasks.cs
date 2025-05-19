@@ -1,6 +1,4 @@
 using System.Globalization;
-using Managers;
-// using Shared;
 
 namespace Managers;
 
@@ -104,7 +102,7 @@ public static class TaskManager {
 
         GlobalData.TaskList.Add(item); // Add the new task to the global TaskList
         JsonHandler.SaveJsonData(); // Save Changes
-        GlobalData.frontLog.Information($"Created Task '{item.TaskName}'");
+        LogManager.frontLog.Information($"Created Task '{item.TaskName}'");
     }
 
     public static bool ValidateTaskName(string? name) {
@@ -198,7 +196,7 @@ public static class TaskManager {
 
         GlobalData.TaskList.RemoveAt(index); // Remove selected task
         JsonHandler.SaveJsonData(); // Save changes
-        GlobalData.frontLog.Information($"Remove Task '{name}'");
+        LogManager.frontLog.Information($"Remove Task '{name}'");
     }
 
     /// <summary>

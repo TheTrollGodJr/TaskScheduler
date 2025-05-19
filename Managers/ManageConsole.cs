@@ -1,22 +1,3 @@
-using System;
-using System.Dynamic;
-using System.Net.NetworkInformation;
-using System.Globalization;
-using System.IO;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using System.Text.Json;
-using System.Collections.Generic;
-//using Managers;
-//using Managers.jsonHandler;
-//using Shared;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-//using JsonHandler = Managers.JsonHandler;
-//using TaskManager = Managers.TaskManager.TaskManager;
-using Serilog;
-
 namespace Managers;
 
 public static class ConsoleManager {
@@ -24,7 +5,7 @@ public static class ConsoleManager {
     public static void LaunchConsoleApp() {
         JsonHandler.UnlockJson(GlobalData.lockPath);
 
-        GlobalData.frontLog.Information("Started Frontend Console Process");
+        LogManager.frontLog.Information("Started Frontend Console Process");
 
         var options = new List<string> { "Create Task", "View Tasks", "Edit Task", "Remove Task", "Stop Manager -- Not Implemented", "Restart Manager -- Not Implemented", "Exit" };
         
@@ -52,7 +33,7 @@ public static class ConsoleManager {
                 case 5: // Restart Manager
                     break;
                 case 6: // Exit
-                    GlobalData.frontLog.Information("Closed Console Frontend");
+                    LogManager.frontLog.Information("Closed Console Frontend");
                     Environment.Exit(0);
                     break;
                 default: break;
@@ -62,7 +43,7 @@ public static class ConsoleManager {
 
     public static void ErrorScreen(string message)
     {
-        GlobalData.frontLog.Error($"{message}");
+        LogManager.frontLog.Error($"{message}");
         Console.Clear();
         Console.WriteLine($"Error:\n    {message}\n\nPress Enter To Exit");
         Console.ReadLine();
@@ -260,7 +241,7 @@ public static class ConsoleManager {
 
         //JsonHandler.SaveJsonData();
         JsonHandler.SaveJsonData();
-        GlobalData.frontLog.Information($"Edited Attribute '{attrList[itemIndex]}' from Task {GlobalData.TaskList[taskListIndex].TaskName}");
+        LogManager.frontLog.Information($"Edited Attribute '{attrList[itemIndex]}' from Task {GlobalData.TaskList[taskListIndex].TaskName}");
     }
 
     static List<string> TaskToList(ScheduledTask item, bool fixedLength = false) {
@@ -412,7 +393,7 @@ public static class ConsoleManager {
 
                     // Remove task
                     TaskManager.RemoveItem(taskNames[selected]);
-                    GlobalData.frontLog.Information($"Removed Task '{taskNames[selected]}'");
+                    LogManager.frontLog.Information($"Removed Task '{taskNames[selected]}'");
                     taskNames.RemoveAt(selected);
                     }
 

@@ -14,18 +14,17 @@ public static class GlobalData
     public readonly static string jsonFilePath = Path.Combine(programDataPath, "tasks.json"); // Path to the tasks.json file holding task data
     public readonly static string lockPath = Path.Combine(programDataPath, ".lock"); // Path to .lock file
     public static List<ScheduledTask>? TaskList;// = JsonHandler.GetJsonData(); // List of all tasks retrieved from the tasks.json
-    public readonly static string logPath = Path.Combine(programDataPath, "logs", "backend.log");
-    public readonly static string frontLogPath = Path.Combine(programDataPath, "logs", "frontend.log");
-    public static Serilog.Core.Logger log;// = new LoggerConfiguration().WriteTo.File(logPath, rollingInterval: RollingInterval.Month).CreateLogger();
-    public static Serilog.Core.Logger frontLog;// = new LoggerConfiguration().WriteTo.File(frontLogPath, rollingInterval: RollingInterval.Month).CreateLogger();
+    
+    //public static Serilog.Core.Logger log;// = new LoggerConfiguration().WriteTo.File(logPath, rollingInterval: RollingInterval.Month).CreateLogger();
+    //public static Serilog.Core.Logger frontLog;// = new LoggerConfiguration().WriteTo.File(frontLogPath, rollingInterval: RollingInterval.Month).CreateLogger();
 
     static GlobalData()
     {
         if (!Path.Exists(Path.Combine(programDataPath, "logs"))) Directory.CreateDirectory(Path.Combine(programDataPath, "logs"));
 
         JsonHandler.UnlockJson(lockPath);
-        log = new LoggerConfiguration().WriteTo.File(logPath, rollingInterval: RollingInterval.Day).CreateLogger();
-        frontLog = new LoggerConfiguration().WriteTo.File(frontLogPath, rollingInterval: RollingInterval.Day).CreateLogger();
+        //log = new LoggerConfiguration().WriteTo.File(logPath, rollingInterval: RollingInterval.Day).CreateLogger();
+        //frontLog = new LoggerConfiguration().WriteTo.File(frontLogPath, rollingInterval: RollingInterval.Day).CreateLogger();
         TaskList = JsonHandler.GetJsonData(); // List of all tasks retrieved from the tasks.json
     }
 }

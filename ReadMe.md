@@ -8,6 +8,7 @@
 - [X] Create log files
 - [ ] Add comments to all frontend
 - [ ] Add comments to all backend
+- [ ] Reorganize all code
 
 ## Frontend ToDo
 - [X] json file lock when reading/writing
@@ -29,7 +30,7 @@
 - [X] Main loop to check if a task needs to be added to the queue -- loop once a minute
 - [X] json file lock when reading
 - [X] Create a queue for tasks that need to be run.
-- ~~[ ] Make backend into a windows service~~
+- [ ] ~~Make backend into a windows service~~
 - [X] Log file
 - [X] add requirement for admin access to run -- might interfer with autostart
 - [X] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
@@ -42,3 +43,5 @@
 - [ ] Remove all logs over 7 days old
 - [ ] Add UAC prompt
 - [X] Create stop signal file instead of removing running.lock -- keep running to lock to prevent lauching more backend processes
+- [ ] Make backend close quicker by interrupting the TaskLoop Thread.Sleep() instead of waiting a full minute
+- [ ] Clean up the main Program.cs; move most functions into different files
