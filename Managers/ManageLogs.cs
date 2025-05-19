@@ -28,8 +28,10 @@ public static class LogManager
         foreach (var file in logFiles)
         {
             string fileDate = Path.GetFileName(file);
-            if (fileDate.Length >= 8) fileDate = fileDate.Substring(fileDate.Length - 8);
+            Console.Write($"{fileDate} -> ");
+            if (fileDate.Length >= 8) fileDate = fileDate.Substring(fileDate.Length - 12, 8);
             else continue;
+            Console.WriteLine(fileDate);
 
             if (DateTime.TryParseExact(fileDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out DateTime parsed))
             {

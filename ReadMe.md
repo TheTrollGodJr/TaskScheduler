@@ -9,6 +9,7 @@
 - [ ] Add comments to all frontend
 - [ ] Add comments to all backend
 - [ ] Reorganize all code
+- [ ] Create installer exe using Inno Setup
 
 ## Frontend ToDo
 - [X] json file lock when reading/writing
@@ -40,7 +41,7 @@
 - [X] Launch frontend gui as an entirely new process using -g
 - [X] Test everything
 - [X] Move logs to a subfolder
-- [ ] Remove all logs over 7 days old
+- [X] Remove all logs over 7 days old
 - [ ] Add UAC prompt
 - [X] Create stop signal file instead of removing running.lock -- keep running to lock to prevent lauching more backend processes
 - [ ] Make backend close quicker by interrupting the TaskLoop Thread.Sleep() instead of waiting a full minute

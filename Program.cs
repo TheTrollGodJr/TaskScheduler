@@ -23,6 +23,7 @@ class TaskService
     private static string runLock = Path.Combine(appDir, "running.lock");
     private static string stopSignal = Path.Combine(appDir, "stopSignal.lock");
     private static Thread? TimerThread;
+    private static readonly ManualResetEvent shutdownEvent = new(false);
 
     [STAThread]
     static void Main(string[] args) {
@@ -186,6 +187,7 @@ class TaskService
         if (!File.Exists(stopSignal))
         {
             File.Create(stopSignal).Close();
+            shutdownEvent.Set();
             LogManager.log.Information("Created Stop Signal File");
         }
     }
@@ -195,7 +197,9 @@ class TaskService
         if (File.Exists(runLock)) File.Delete(runLock);
         LogManager.log.Information("Removed RunLock File");
         Thread.Sleep(5);
-
+        if (File.Exists(stopSignal)) File.Delete(stopSignal);
+        LogManager.log.Information("Removed Stop Signal File");
+        /*
         for (int i = 0; i < 5; i++)
         {
             try
@@ -212,6 +216,7 @@ class TaskService
                 Thread.Sleep(100);
             }
         }
+        */
     }
 
     static void TaskLoop()
@@ -226,7 +231,7 @@ class TaskService
             {
                 LogManager.log.Error("Task Loop Terminated; TaskList is Null");
                 runTimer = false;
-                return;
+                break;
             }
 
             foreach (var item in GlobalData.TaskList)
@@ -235,10 +240,15 @@ class TaskService
                 if (item.Date == currTime && !IsQueued(item.TaskName) && item.TaskName != null && item.Command != null)
                 {
                     LogManager.log.Information($"Task '{item.TaskName}' Added to The Queue");
-                    commandQueue.Enqueue(new string[] { item.TaskName, item.Command });
+                    commandQueue.Enqueue([item.TaskName, item.Command]);
                 }
             }
-            Thread.Sleep(TimeSpan.FromMinutes(1));
+            //Thread.Sleep(TimeSpan.FromMinutes(1));
+            if (shutdownEvent.WaitOne(TimeSpan.FromMinutes(1)))
+            {
+                LogManager.log.Information("Task Loop Shutdown Signal Recieved; Closing Task Loop Thread");
+                break;
+            }
         }
     }
 
@@ -390,7 +400,7 @@ public class Tray
         {
             if (e.Button == MouseButtons.Left)
             {
-                StartGuiProcess("-g");
+                StartGuiProcess("-c");
             }
         };
 
