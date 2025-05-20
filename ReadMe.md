@@ -24,6 +24,7 @@
 - [X] Check that files are being store to "Program Data"
 - [X] Handle edge cases when TaskList is null
 - [ ] Add a way to exit the NewTask() screen
+- [ ] Distinguish between error logs and fatal logs
 
 ## GUI
 - [ ] Make GUI
@@ -48,3 +49,4 @@
 - [X] Create stop signal file instead of removing running.lock -- keep running to lock to prevent lauching more backend processes
 - [X] Make backend close quicker by interrupting the TaskLoop Thread.Sleep() instead of waiting a full minute
 - [ ] Clean up the main Program.cs; move most functions into different files
+- [ ] Distinguish between error logs and fatal logs

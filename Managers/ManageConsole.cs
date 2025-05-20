@@ -30,7 +30,7 @@ public static class ConsoleManager
                     int status = TaskManager.NewTask(); // 0 = good, 1 = TaskList is null, 2 = TaskList.Date = null
                     if (status == 1) ErrorScreen("Could Not Create New Task; TaskList is Null");
                     else if (status == 2) ErrorScreen("Could Not Create New Task; TaskList Task.Date is Null");
-                    else JsonHandler.SaveJsonData();
+                    else if (status == 3) ErrorScreen("Could Not Save New Task");
                     break;
                 case 1: // View Tasks
                     ViewTasks();
@@ -132,11 +132,17 @@ public static class ConsoleManager
             else if (key == ConsoleKey.UpArrow && selection[0] != 0) selection[0]--;
             else if (key == ConsoleKey.DownArrow && selection[0] != GlobalData.TaskList.Count - 1) selection[0]++;
             else if (key == ConsoleKey.Escape) break;
-            else if (key == ConsoleKey.Enter) EditAttributeMenu(selection[0], selection[1]);
+            else if (key == ConsoleKey.Enter)
+            {
+                int editStatus = EditAttributeMenu(selection[0], selection[1]);
+                if (editStatus == 1) ErrorScreen("Could Not Edit Tasks; TaskList is Null");
+                else if (editStatus == 2) ErrorScreen($"Failed to Edit Attribute From Task '{GlobalData.TaskList[selection[0]].TaskName}'");
+                else if (editStatus == 3) ErrorScreen($"Failed to Save Changes for Task '{GlobalData.TaskList[selection[0]].TaskName}'");
+            }
         }
     }
 
-    static void EditAttributeMenu(int taskListIndex, int itemIndex)
+    static int EditAttributeMenu(int taskListIndex, int itemIndex)
     {
         List<string> attrList = ["Task Name", "Date", "Task Repeat?", "Repeat Interval", "Command"];
         if (GlobalData.TaskList != null)
@@ -154,7 +160,7 @@ public static class ConsoleManager
         else
         {
             ErrorScreen("Could Not Edit TaskList; TaskList is Null");
-            return;
+            return 1;
         }
 
         Console.WriteLine("Type '!EXIT?' to go back");
@@ -162,11 +168,18 @@ public static class ConsoleManager
         if (!TaskManager.EditAttribute(taskListIndex, itemIndex))
         {
             LogManager.frontLog.Error($"Failed to Edit Attribute '{attrList[itemIndex]}' From Task '{GlobalData.TaskList[taskListIndex].TaskName}'");
-            return;
+            return 2;
         }
 
-        JsonHandler.SaveJsonData();
+        if (!JsonHandler.SaveJsonData()) // Save Changes
+        {   // Failed to save changes
+
+            LogManager.frontLog.Error($"Failed to Save Changes for Attribute '{attrList[itemIndex]}' From Task '{GlobalData.TaskList[taskListIndex].TaskName}'");
+            return 3;
+        }
+
         LogManager.frontLog.Information($"Edited Attribute '{attrList[itemIndex]}' from Task {GlobalData.TaskList[taskListIndex].TaskName}");
+        return 0;
     }
 
 

@@ -196,27 +196,12 @@ class TaskService
     {
         if (File.Exists(runLock)) File.Delete(runLock);
         LogManager.log.Information("Removed RunLock File");
-        Thread.Sleep(5);
+
         if (File.Exists(stopSignal)) File.Delete(stopSignal);
         LogManager.log.Information("Removed Stop Signal File");
-        /*
-        for (int i = 0; i < 5; i++)
-        {
-            try
-            {
-                if (File.Exists(stopSignal))
-                {
-                    File.Delete(stopSignal);
-                    LogManager.log.Information("Removed Stop Signal File");
-                    break;
-                }
-            }
-            catch
-            {
-                Thread.Sleep(100);
-            }
-        }
-        */
+
+        if (File.Exists(GlobalData.lockPath)) File.Delete(GlobalData.lockPath);
+        LogManager.log.Information("Removed tasks.json Lock File");
     }
 
     static void TaskLoop()
@@ -338,7 +323,7 @@ class TaskService
                 {
                     LogManager.log.Information($"Updating Repeat Interval For Task '{taskName}'");
                     item.Date = UpdateDate(item.Date, item.RepeatInterval, item.TrueDate);
-                    JsonHandler.SaveJsonData();
+                    if (!JsonHandler.SaveJsonData()) LogManager.log.Error("Failed to Save Updated RepeatInterval Data to tasks.json");
                     break;
                 }
                 else

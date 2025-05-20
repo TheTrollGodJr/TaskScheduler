@@ -13,8 +13,12 @@ public static class TaskManager
     ///
     ///     MANAGE TASKS
     /// 
+    
 
-    /// 0 = good, 1 = TaskList is null, 2 = TaskList.Date = null
+    ///<summary>
+    ///  Gets user input to create a new ScheduledTask
+    ///</summary>
+    /// <returns>Int status of task creation. 0 = Successful, 1 = TaskList is null, 2 = User input date is null, 3 = Error saving data</returns>
     public static int NewTask()
     {
         if (GlobalData.TaskList == null) return 1;
@@ -100,7 +104,14 @@ public static class TaskManager
         }
 
         GlobalData.TaskList.Add(item); // Add the new task to the global TaskList
-        JsonHandler.SaveJsonData(); // Save Changes
+
+        if (!JsonHandler.SaveJsonData()) // Save Changes
+        {   // Saving Failed
+
+            LogManager.log.Error($"Failed to Save TaskList With New Task '{item.TaskName}'");
+            return 3;
+        }
+
         LogManager.frontLog.Information($"Created Task '{item.TaskName}'");
         return 0;
     }
@@ -109,129 +120,202 @@ public static class TaskManager
     /// Removes a task from the global TaskList and save the change
     /// </summary>
     /// <param name="name">The TaskName of the task you want to remove</param>
+    /// <returns>Int status of removal. 0 = successful, 1 = TaskList is null, 2 = Task could not be found, 3 = Error saving TaskList data</returns>
     public static int RemoveItem(string name)
     {
-        if (GlobalData.TaskList == null)
-        {
-            //ConsoleManager.ErrorScreen($"Cannot Remove Task '{name}'; TaskList is Null");
-            return 1;
-        }
+        if (GlobalData.TaskList == null) return 1; // TaskList is null
+
         int index; // index of the item to be removed
 
         // Loop through all tasks until the task is found
-        for (index = 0; index < GlobalData.TaskList.Count; index++)
-        {
-            if (GlobalData.TaskList[index].TaskName == name) break;
-        }
+        for (index = 0; index < GlobalData.TaskList.Count; index++) if (GlobalData.TaskList[index].TaskName == name) break;
 
         // // Return an error if no task was found
         if (index >= GlobalData.TaskList.Count) return 2;
 
         GlobalData.TaskList.RemoveAt(index); // Remove selected task
-        JsonHandler.SaveJsonData(); // Save changes
+
+        if (!JsonHandler.SaveJsonData()) // Save changes
+        {   // Saving failed
+
+            LogManager.log.Error($"Failed to Save TaskList With Removed Task '{name}'");
+            return 3;
+        }
+
         return 0;
     }
 
+    /// <summary>
+    /// Edits the value of a specified value in a ScheduledTask task
+    /// </summary>
+    /// <param name="taskListIndex">The Task index of TaskList to edit</param>
+    /// <param name="itemIndex">The index of the Task attribute to edit: [TaskName=0, Date=1, TaskRepeat?=2, RepeatInterval=3, Command=4]</param>
+    /// <returns>True if the attribute was edited successfully, false if it wasn't</returns>
     public static bool EditAttribute(int taskListIndex, int itemIndex)
     {
-        if (GlobalData.TaskList == null) return false;
+        if (GlobalData.TaskList == null) return false; // Couldn't get TaskList
 
-        string? inp;
+        string? inp; // User input
         bool invalidInput = true;
 
-        while (invalidInput)
+        try // Try to edit the attribute
         {
-            switch (itemIndex)
-            {
-                case 0:
-                    Console.WriteLine("\nTask Name: ");
-                    inp = Console.ReadLine();
-                    if (inp == "!EXIT?") return true;
 
-                    int nameStatus = ValidateTaskName(inp);
-                    if (nameStatus == 0)
-                    {
-                        GlobalData.TaskList[taskListIndex].TaskName = inp;
-                        invalidInput = false;
-                    }
-                    else if (nameStatus == 1) return false;
-                    break;
-                case 1:
-                    Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
-                    inp = Console.ReadLine();
-                    if (inp == "!EXIT?") return true;
-                    if (ValidateDate(inp, "MM/dd HH:mm"))
-                    {
-                        GlobalData.TaskList[taskListIndex].Date = inp;
-                        invalidInput = false;
-                    }
-                    break;
-                case 2:
-                    Console.WriteLine("\nRepeat Task? (Y/N): ");
-                    inp = Console.ReadLine();
-                    if (inp == "!EXIT?") return true;
-                    if (ValidateRepeatTask(inp))
-                    {
-                        if (inp == "Y")
-                        {
-                            GlobalData.TaskList[taskListIndex].Repeats = true;
-                            itemIndex++;
+            while (invalidInput) // Keep prompting the user for input until their input is valid
+            {
+
+                switch (itemIndex) // Which attribute to edit
+                {
+
+                    case 0:
+
+                        // Get input
+                        Console.WriteLine("\nTask Name: ");
+                        inp = Console.ReadLine();
+
+                        if (inp == "!EXIT?") return true; // Go back
+
+                        // Validate and check input
+                        int nameStatus = ValidateTaskName(inp); // Check input
+                        if (nameStatus == 0)
+                        { // Input was valid
+
+                            GlobalData.TaskList[taskListIndex].TaskName = inp;
+                            invalidInput = false; // Break loop
                         }
-                        else
-                        {
-                            GlobalData.TaskList[taskListIndex].Repeats = false;
-                            GlobalData.TaskList[taskListIndex].RepeatInterval = null;
-                            invalidInput = false;
+                        else if (nameStatus == 1) return false; // TaskList is null
+                        break;
+
+                    case 1:
+
+                        // Get input
+                        Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
+                        inp = Console.ReadLine();
+
+                        if (inp == "!EXIT?") return true; // Go back
+
+                        // Check date
+                        if (ValidateDate(inp, "MM/dd HH:mm"))
+                        { // Date is valid
+
+                            GlobalData.TaskList[taskListIndex].Date = inp;
+                            invalidInput = false; // Break loop
                         }
-                    }
-                    break;
-                case 3:
-                    if (!GlobalData.TaskList[taskListIndex].Repeats)
-                    {
-                        Console.Write("\nCannot change Repeat Interval if Repeating is off.\n(Press any key to go back)");
-                        Console.ReadKey(true);
-                        return true;
-                    }
-                    Console.WriteLine("\nRepeat Interval (min, hr, day, week, mon, year): ");
-                    inp = Console.ReadLine();
-                    if (inp == "!EXIT?")
-                    {
-                        if (GlobalData.TaskList[taskListIndex].Repeats && GlobalData.TaskList[taskListIndex].RepeatInterval == null)
-                        {
-                            Console.WriteLine("Cannot exit without specifiying a Repeat Interval");
-                            break;
+                        break;
+
+                    case 2:
+
+                        // Get input
+                        Console.WriteLine("\nRepeat Task? (Y/N): ");
+                        inp = Console.ReadLine();
+
+                        if (inp == "!EXIT?") return true; // Go back
+
+                        // Check input
+                        if (ValidateRepeatTask(inp))
+                        { // Input is valid
+
+                            if (inp == "Y")
+                            { // Save selection "Y" as true
+
+                                GlobalData.TaskList[taskListIndex].Repeats = true;
+                                itemIndex++; // Move edit selection to select a repeat interval
+                            }
+                            else
+                            { // Save selection "N" as false
+
+                                GlobalData.TaskList[taskListIndex].Repeats = false;
+                                GlobalData.TaskList[taskListIndex].RepeatInterval = null;
+                                invalidInput = false; // Break loop
+                            }
                         }
-                        else return true;
-                    }
-                    if (ValidateRepeatInterval(inp))
-                    {
-                        GlobalData.TaskList[taskListIndex].RepeatInterval = inp;
-                        invalidInput = false;
-                    }
-                    break;
-                case 4:
-                    Console.WriteLine("\nTerminal Command: ");
-                    inp = Console.ReadLine();
-                    if (inp == "!EXIT?") return true;
-                    if (!string.IsNullOrEmpty(inp))
-                    {
-                        GlobalData.TaskList[taskListIndex].Command = inp;
-                        invalidInput = false;
-                    }
-                    else Console.Write("Cannot be empty. Try Again\n");
-                    break;
+                        break;
+
+                    case 3:
+
+                        // This attribute can only be changed if case 2 is set to true
+                        // Check if this attribute can be edited
+                        if (!GlobalData.TaskList[taskListIndex].Repeats)
+                        {   // Cannot edit this attribute
+
+                            Console.Write("\nCannot change Repeat Interval if Repeating is off.\n(Press any key to go back)");
+                            Console.ReadKey(true);
+                            return true; // Exit function
+                        }
+
+                        // Get input
+                        Console.WriteLine("\nRepeat Interval (min, hr, day, week, mon, year): ");
+                        inp = Console.ReadLine();
+
+                        if (inp == "!EXIT?") // Go back
+                        {
+
+                            // Cannot exit if no repeat interval is specified
+                            if (GlobalData.TaskList[taskListIndex].Repeats && GlobalData.TaskList[taskListIndex].RepeatInterval == null)
+                            {
+
+                                Console.WriteLine("Cannot exit without specifiying a Repeat Interval");
+                                break;
+                            }
+
+                            else return true; // Exit function
+                        }
+
+                        // Check input
+                        if (ValidateRepeatInterval(inp))
+                        { // Input is valid
+
+                            GlobalData.TaskList[taskListIndex].RepeatInterval = inp;
+                            invalidInput = false; // Break loop
+                        }
+                        break;
+
+                    case 4:
+
+                        // Get input
+                        Console.WriteLine("\nTerminal Command: ");
+                        inp = Console.ReadLine();
+
+                        if (inp == "!EXIT?") return true; // Go back
+
+                        // Check input
+                        if (!string.IsNullOrEmpty(inp))
+                        { // Input is valid
+
+                            GlobalData.TaskList[taskListIndex].Command = inp;
+                            invalidInput = false; // Break loop
+                        }
+                        else Console.Write("Cannot be empty. Try Again\n");
+                        break;
+                }
             }
         }
-        return true;
+        catch
+        {
+            return false; // Error occured when editing
+        }
+
+        return true; // Edit successful
     }
 
     ///
     ///     VALIDATING TASK INFO
     /// 
 
+
+    /// <summary>
+    /// Checks a string to ensure it is a valid name for a ScheduledTask variable.
+    /// </summary>
+    /// <param name="name">String to validate</param>
+    /// <returns>Int value status. 0 indicates the name is valid. 
+    /// 1 indicates that the TaskList is null. 
+    /// 2 indicates that the name parameters is null.
+    /// 3 indicates that the namem is already in use.
+    /// </returns>
     public static int ValidateTaskName(string? name)
     {
         if (GlobalData.TaskList == null) return 1;
+
         // Is the name empty?
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -252,6 +336,12 @@ public static class TaskManager
         return 0; // Name is valid
     }
 
+/// <summary>
+/// Ensures that the date parameters is a valid date
+/// </summary>
+/// <param name="date">Date to be verified</param>
+/// <param name="format">The format that the date parameters is in</param>
+/// <returns>True if the date is valid, false if it is not</returns>
     public static bool ValidateDate(string? date, string format)
     {
 
@@ -275,30 +365,40 @@ public static class TaskManager
 
     }
 
+/// <summary>
+/// Ensures that the string parameters is either "Y" or "N"
+/// </summary>
+/// <param name="inp">String to be verified</param>
+/// <returns>True if the string parameter is valid, false if it is not</returns>
     public static bool ValidateRepeatTask(string? inp)
     {
 
         if (string.IsNullOrWhiteSpace(inp) || (inp.ToUpper() != "Y" && inp.ToUpper() != "N"))
-        {
+        { // inp is not valid
 
             Console.WriteLine("Invalid Input. Try Again: ");
             return false;
         }
 
-        return true;
+        return true; // inp is valid
     }
 
+/// <summary>
+/// Ensures that the string parameter is a valid repeat interval: min, hr, day, week, mon, or year
+/// </summary>
+/// <param name="inp">String parameter to be verified</param>
+/// <returns>True if the string parameter is valid, false if it is not</returns>
     public static bool ValidateRepeatInterval(string? inp)
     {
 
         if (string.IsNullOrWhiteSpace(inp) || (inp.ToLower() != "min" && inp.ToLower() != "hr" && inp.ToLower() != "day" && inp.ToLower() != "week" && inp.ToLower() != "mon" && inp.ToLower() != "year"))
-        {
+        { // imp is not valid
 
             Console.WriteLine("Invalid Input. Try Again: ");
             return false;
         }
 
-        return true;
+        return true; // imp is valid
     }
 
 
@@ -313,7 +413,7 @@ public static class TaskManager
     /// <returns>Returns a string list with all task names</returns>
     public static List<string>? GetTaskNames()
     {
-        if (GlobalData.TaskList == null) return null;
+        if (GlobalData.TaskList == null) return null; // Couldn't get TaskList
 
         List<string> names = []; // Create empty name list
         foreach (var item in GlobalData.TaskList)
@@ -324,13 +424,26 @@ public static class TaskManager
         return names; // return task name list
     }
 
+    /// <summary>
+    /// Takes a variable with the type ScheduledTask and converts all variable data into a string array
+    /// </summary>
+    /// <param name="item">The ScheduledTask variable to extract data from</param>
+    /// <param name="fixedLength">Bool to trim strings in the output; set to false by default</param>
+    /// <returns>String list with all ScheduledTask data.</returns>
     public static List<string> TaskToList(ScheduledTask item, bool fixedLength = false)
     {
         if (!fixedLength) return [item.TaskName, item.Date, item.Repeats.ToString(), item.RepeatInterval ?? "Null", item.Command];
         return [FixedLength(item.TaskName, 8), FixedLength(item.Date, 11), FixedLength(item.Repeats.ToString(), 7), FixedLength(item.RepeatInterval ?? "Null", 6), item.Command];
     }
 
-    public static string FixedLength(string? str, int len) {
+    /// <summary>
+    /// Trim or pad a string to a sepcificed length
+    /// </summary>
+    /// <param name="str">String variable to be trimmed or padded</param>
+    /// <param name="len">Length of the string output</param>
+    /// <returns>A string of the specified length</returns>
+    public static string FixedLength(string? str, int len)
+    {
 
         if (str == null) return "";
         else if (str.Length > len) return str.Substring(0, len); // Trim string if its too long
