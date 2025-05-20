@@ -1,39 +1,41 @@
-//using Managers.jsonHandler;
-using Managers;
-using Serilog;
-
 namespace Managers;
 
 /// <summary>
-/// Global list variable of all tasks
+/// Global variables
 /// </summary>
 public static class GlobalData
 {
-    public readonly static string programDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ShermanTaskScheduler");
-    //public static string roamingAppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ShermanTaskScheduler"); // Path to the Program Files Dir
-    public readonly static string jsonFilePath = Path.Combine(programDataPath, "tasks.json"); // Path to the tasks.json file holding task data
-    public readonly static string lockPath = Path.Combine(programDataPath, ".lock"); // Path to .lock file
-    public static List<ScheduledTask>? TaskList;// = JsonHandler.GetJsonData(); // List of all tasks retrieved from the tasks.json
+    /// 
+    /// DECLARING AND INITILIZING GLOBAL VARIABLES
+    /// 
     
-    //public static Serilog.Core.Logger log;// = new LoggerConfiguration().WriteTo.File(logPath, rollingInterval: RollingInterval.Month).CreateLogger();
-    //public static Serilog.Core.Logger frontLog;// = new LoggerConfiguration().WriteTo.File(frontLogPath, rollingInterval: RollingInterval.Month).CreateLogger();
 
+    public readonly static string programDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ShermanTaskScheduler"); // Path to the Program Files Dir
+    public readonly static string jsonFilePath = Path.Combine(programDataPath, "tasks.json"); // Path to the tasks.json file
+    public readonly static string lockPath = Path.Combine(programDataPath, ".lock"); // Path to the tasks.json lock file
+    public static List<ScheduledTask>? TaskList; // List of all tasks retrieved from the tasks.json
+
+    /// <summary>
+    /// Constructor to setup files paths for logs and to get task info
+    /// </summary>
     static GlobalData()
     {
-        if (!Path.Exists(Path.Combine(programDataPath, "logs"))) Directory.CreateDirectory(Path.Combine(programDataPath, "logs"));
+        if (!Path.Exists(Path.Combine(programDataPath, "logs"))) Directory.CreateDirectory(Path.Combine(programDataPath, "logs")); // Create log subdir if it doesn't exist
 
-        JsonHandler.UnlockJson(lockPath);
-        //log = new LoggerConfiguration().WriteTo.File(logPath, rollingInterval: RollingInterval.Day).CreateLogger();
-        //frontLog = new LoggerConfiguration().WriteTo.File(frontLogPath, rollingInterval: RollingInterval.Day).CreateLogger();
+        JsonHandler.UnlockJson(lockPath); // Remove any file lock on tasks.json
         TaskList = JsonHandler.GetJsonData(); // List of all tasks retrieved from the tasks.json
     }
 }
 
-public class ScheduledTask {
-        public string? TaskName;
-        public string? Command;
-        public string? Date;
-        public string? RepeatInterval; //second, minute, hour, day, week, month, year, null (if does not repeat)
-        public bool Repeats;
-        public int? TrueDate = null;
-    }
+/// <summary>
+/// Class to hold task data
+/// </summary>
+public class ScheduledTask
+{
+    public string? TaskName;
+    public string? Command;
+    public string? Date;
+    public string? RepeatInterval; //second, minute, hour, day, week, month, year, null (if does not repeat)
+    public bool Repeats;
+    public int? TrueDate = null;
+}

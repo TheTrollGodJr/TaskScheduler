@@ -30,11 +30,14 @@ public static class TaskManager
         Console.WriteLine("Task Name: ");
         item.TaskName = Console.ReadLine(); // Save the task name
 
+        // Check task name
         int nameStatus = ValidateTaskName(item.TaskName);
         while (nameStatus != 0)
-        {
-            if (nameStatus == 1) return 1;
+        {   // Task name invalid or error during validating
 
+            if (nameStatus == 1) return 1; // TaskList is null
+
+            // Get and check new task name
             item.TaskName = Console.ReadLine();
             nameStatus = ValidateTaskName(item.TaskName);
         }
@@ -43,34 +46,33 @@ public static class TaskManager
         Console.WriteLine("Schedule Date (MM/dd HH:mm): ");
         item.Date = Console.ReadLine();
 
-        while (!ValidateDate(item.Date, "MM/dd HH:mm"))
-        {
+        // Check date
+        while (!ValidateDate(item.Date, "MM/dd HH:mm")) item.Date = Console.ReadLine();
 
-            item.Date = Console.ReadLine();
-        }
-
+        // Declaring date variables
         int day;
         int month;
 
         // Add a value for TrueDate to save the original day of a task if the day is scheduled at the end of a month
         if (item.Date != null)
         {
+
+            // Initilizing date variables
             day = int.Parse(item.Date.Substring(3, 3));
             month = int.Parse(item.Date.Substring(0, 1));
         }
-        else return 2;
+        else return 2; // Date is null
 
+        // Set the truth day of a date for months to revert back to after months with less days
         if (day > 28) item.TrueDate = day;
-        else if (day == 29 && month == 2) item.Date = $"02/28 {item.Date.Substring(6)}"; // No leap year
+        else if (day == 29 && month == 2) item.Date = $"02/28 {item.Date.Substring(6)}"; // Account for leap year
 
         // Does the task repeat?
         Console.WriteLine("Repeat Task? (Y/N): ");
         string? inp = Console.ReadLine();
 
-        while (!ValidateRepeatTask(inp))
-        {
-            inp = Console.ReadLine();
-        }
+        // Check user input
+        while (!ValidateRepeatTask(inp)) inp = Console.ReadLine();
 
         // Set item repeat bool
         if (inp == "Y") item.Repeats = true;
@@ -81,13 +83,10 @@ public static class TaskManager
         {
 
             Console.WriteLine("Repeat Interval (min, hr, day, week, mon, year): ");
-
             item.RepeatInterval = Console.ReadLine();
 
-            while (!ValidateRepeatInterval(item.RepeatInterval))
-            {
-                item.RepeatInterval = Console.ReadLine();
-            }
+            // Check repeat interval
+            while (!ValidateRepeatInterval(item.RepeatInterval)) item.RepeatInterval = Console.ReadLine();
         }
         else item.RepeatInterval = null; // Set the repeat interval to Null if the task doesn't repeat
 
@@ -97,7 +96,7 @@ public static class TaskManager
 
         // Check the the command is valid
         while (string.IsNullOrWhiteSpace(item.Command))
-        {
+        {   // Command is invalid
 
             Console.WriteLine("Cannot be empty. Try Again: ");
             item.Command = Console.ReadLine();
@@ -113,7 +112,7 @@ public static class TaskManager
         }
 
         LogManager.frontLog.Information($"Created Task '{item.TaskName}'");
-        return 0;
+        return 0; // Task creation successful
     }
 
     /// <summary>
@@ -297,6 +296,57 @@ public static class TaskManager
 
         return true; // Edit successful
     }
+
+    static string UpdateDate(string date, string interval, int? trueDate = null) {
+        switch (interval) {
+            case "min": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddMinutes(1).ToString("MM/dd HH:mm");
+            case "hr": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddHours(1).ToString("MM/dd HH:mm");
+            case "mon":
+                if (trueDate != null)
+                {
+                    DateTime nextMonth = DateTime.ParseExact(date, "MM/dd HH:mm", null).AddMonths(1);
+                    int lastDay = DateTime.DaysInMonth(2024, nextMonth.Month);
+                    int day = Math.Min(trueDate.Value, lastDay);
+                    string newDate = new DateTime(2024, nextMonth.Month, day, nextMonth.Hour, nextMonth.Minute, 0).ToString("MM/dd HH:mm");
+                    if (newDate.Contains("02/29")) return $"02/28 {newDate.Substring(6)}";
+                    return newDate;
+                }
+                else return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddMonths(1).ToString("MM/dd HH:mm");
+            case "week": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddDays(7).ToString("MM/dd HH:mm");
+            case "day": return DateTime.ParseExact(date, "MM/dd HH:mm", null).AddDays(1).ToString("MM/dd HH:mm");
+            case "year": return date;
+        }
+        return date;
+    }
+
+    static void UpdateRepeatTime(string taskName) {
+        if (GlobalData.TaskList == null)
+        {
+            LogManager.log.Error("Cannot Update Repeat Time; TaskList is Null");
+            return;
+        }
+        
+        foreach (var item in GlobalData.TaskList)
+        {
+            if (item.TaskName == taskName)
+            {
+                if (item.Repeats && item.Date != null && item.RepeatInterval != null)
+                {
+                    LogManager.log.Information($"Updating Repeat Interval For Task '{taskName}'");
+                    item.Date = UpdateDate(item.Date, item.RepeatInterval, item.TrueDate);
+                    if (!JsonHandler.SaveJsonData()) LogManager.log.Error("Failed to Save Updated RepeatInterval Data to tasks.json");
+                    break;
+                }
+                else
+                {
+                    LogManager.log.Information($"Removing Task '{taskName}'");
+                    TaskManager.RemoveItem(taskName);
+                    break;
+                }
+            }
+        }
+    }
+
 
     ///
     ///     VALIDATING TASK INFO

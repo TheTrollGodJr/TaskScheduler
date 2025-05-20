@@ -9,7 +9,7 @@
 - [ ] Add comments to all frontend
 - [ ] Add comments to all backend
 - [ ] Reorganize all code
-- [ ] Create installer exe using Inno Setup
+- [ ] Create installer exe using Inno Setup/Look into creating msi installer
 - [ ] Add SHA-256 hash to release for extra security
 - [ ] Create actual ReadMe.md with project info
 
