@@ -319,7 +319,7 @@ public static class TaskManager
         return date;
     }
 
-    static void UpdateRepeatTime(string taskName) {
+    public static void UpdateRepeatTime(string taskName) {
         if (GlobalData.TaskList == null)
         {
             LogManager.log.Error("Cannot Update Repeat Time; TaskList is Null");
@@ -340,7 +340,7 @@ public static class TaskManager
                 else
                 {
                     LogManager.log.Information($"Removing Task '{taskName}'");
-                    TaskManager.RemoveItem(taskName);
+                    RemoveItem(taskName);
                     break;
                 }
             }

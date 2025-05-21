@@ -34,7 +34,6 @@
 - [X] Main loop to check if a task needs to be added to the queue -- loop once a minute
 - [X] json file lock when reading
 - [X] Create a queue for tasks that need to be run.
-- [ ] ~~Make backend into a windows service~~
 - [X] Log file
 - [X] add requirement for admin access to run -- might interfer with autostart
 - [X] Handle tasks that repeat at the end of a month when the specified day doesn't exist for the current month
@@ -50,3 +49,12 @@
 - [X] Make backend close quicker by interrupting the TaskLoop Thread.Sleep() instead of waiting a full minute
 - [ ] Clean up the main Program.cs; move most functions into different files
 - [ ] Distinguish between error logs and fatal logs
+
+# Windows Service
+- [ ] Add service functionality by making a subclass from BackgroundService from Microsoft.Extensions.Hosting
+- [ ] adapt the queue loop to check for a cancellation token
+- [ ] launch tray icon as a process in the user session on login -- do this on every login
+- [ ] 
+
+# Tray process:
+- [ ] add check for stop signal/canellation token to end tray icon
